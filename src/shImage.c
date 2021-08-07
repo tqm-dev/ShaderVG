@@ -308,8 +308,12 @@ void shSetupImageFormat(VGImageFormat vg, SHImageFormatDesc *f)
   case VG_sL_8:
   case VG_lL_8:
 
+#if 0
     f->glintformat = GL_LUMINANCE;
     f->glformat = GL_LUMINANCE;
+#else
+    /* Not supported yet */
+#endif
     f->gltype = GL_UNSIGNED_BYTE;
 
     break;
@@ -508,45 +512,6 @@ void shUpdateImageTextureSize(SHImage *i)
 
 void shUpdateImageTexture(SHImage *i, VGContext *c)
 {
-  SHint potwidth;
-  SHint potheight;
-  SHint8 *potdata;
-
-  /* Find nearest power of two size */
-
-  potwidth = 1;
-  while (potwidth < i->width)
-    potwidth *= 2;
-  
-  potheight = 1;
-  while (potheight < i->height)
-    potheight *= 2;
-  
-  
-  /* Scale into a temp buffer if image not a power-of-two size (pot)
-     and non-power-of-two textures are not supported by OpenGL */  
-  
-  if ((i->width < potwidth || i->height < potheight) &&
-      !c->isGLAvailable_TextureNonPowerOfTwo) {
-    
-    potdata = (SHint8*)malloc( potwidth * potheight * i->fd.bytes );
-    if (!potdata) return;
-    
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glBindTexture(GL_TEXTURE_2D, i->texture);
-    
-    
-    gluScaleImage(i->fd.glformat, i->width, i->height, i->fd.gltype, i->data,
-                  potwidth, potheight, i->fd.gltype, potdata);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, i->fd.glintformat, potwidth, potheight, 0,
-                 i->fd.glformat, i->fd.gltype, potdata);
-    
-    free(potdata);
-    return;
-  }
-  
   /* Store pixels to texture */
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glBindTexture(GL_TEXTURE_2D, i->texture);
@@ -980,9 +945,13 @@ VG_API_CALL void vgSetPixels(VGint dx, VGint dy,
                0,0,sx,sy, width, height);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#if 0
   glRasterPos2i(dx, dy);
   glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
   glRasterPos2i(0,0);
+#else
+  /* Not supported yet */
+#endif
   
   free(pixels);
 
@@ -1038,9 +1007,13 @@ VG_API_CALL void vgWritePixels(const void * data, VGint dataStride,
                0,0,0,0, width, height);
   
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#if 0
   glRasterPos2i(dx, dy);
   glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
   glRasterPos2i(0,0);
+#else
+  /* Not supported yet */
+#endif
   
   free(pixels);
 
@@ -1168,9 +1141,13 @@ VG_API_CALL void vgCopyPixels(VGint dx, VGint dy,
   
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#if 0
   glRasterPos2i(dx, dy);
   glCopyPixels(sx, sy, width, height, GL_COLOR);
   glRasterPos2i(0, 0);
+#else
+  /* Not supported yet */
+#endif
   
   VG_RETURN(VG_NO_RETVAL);
 }

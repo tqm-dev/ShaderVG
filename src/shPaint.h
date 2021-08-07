@@ -69,14 +69,10 @@ void SHPaint_dtor(SHPaint *p);
 void shValidateInputStops(SHPaint *p);
 void shSetGradientTexGLState(SHPaint *p);
 
-int shDrawLinearGradientMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
-                             VGPaintMode mode, GLenum texUnit);
-  
-int shDrawRadialGradientMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
-                             VGPaintMode mode, GLenum texUnit);
-
-int shDrawPatternMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
-                      VGPaintMode mode, GLenum texUnit);
+int shLoadLinearGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode);
+int shLoadRadialGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode);
+int shLoadPatternMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode);
+int shLoadOneColorMesh(SHPaint *p);
   
 
 #endif /* __SHPAINT_H */

@@ -115,6 +115,33 @@ typedef struct
   SH_PGLMULTITEXCOORD1F pglMultiTexCoord1f;
   SH_PGLMULTITEXCOORD2F pglMultiTexCoord2f;
   
+  /* GL locations */
+  struct {
+      GLint pos            ;
+      GLint textureUV      ;
+      GLint modelView      ;
+      GLint projection     ;
+      GLint drawMode       ;
+      GLint imageSampler   ;
+      GLint imageMode      ;
+      GLint paintType      ;
+      GLint rampSampler    ;
+      GLint patternSampler ;
+      GLint paintParams    ;
+      GLint surfaceToPaintMatrix    ;
+      GLint paintColor     ;
+      GLint scaleFactorBias;
+  } locationDraw;
+
+  struct {
+      GLuint step;
+      GLuint stepColor;
+  } locationColorRamp;
+
+  /* GL programs */
+  GLuint progDraw;
+  GLuint progColorRamp;
+
 } VGContext;
 
 void VGContext_ctor(VGContext *c);

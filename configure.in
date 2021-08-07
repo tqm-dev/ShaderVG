@@ -1,10 +1,9 @@
-AC_INIT(ShivaVG, 0.2.1)
+AC_INIT(ShivaVG, 2.0.0)
 AC_CONFIG_HEADERS([config.h:config.h.in])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([gnu subdir-objects])
 AC_CANONICAL_HOST
 
-AC_PROG_CC
-AC_PROG_CPP
+AC_PROG_CC_C99
 AC_PROG_LIBTOOL
 
 # ==============================================

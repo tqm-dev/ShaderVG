@@ -24,6 +24,198 @@
 #include <string.h>
 #include <stdio.h>
 
+static const char* vsCodeDraw = R"glsl(
+    #version 130
+    
+/*** Input *******************/
+    in vec2 pos;
+    in vec2 textureUV;
+    uniform mat4 modelView;
+    uniform mat4 projection;
+
+/*** Output ******************/
+    out vec2 varying_uv;
+
+/*** Main thread  **************************************************/
+    void main() {
+
+        /* Stage 3: Transformation */
+        gl_Position = projection * modelView * vec4(pos, 0, 1);
+        varying_uv = textureUV;
+
+    }
+)glsl";
+
+static const char* fsCodeDraw = R"glsl(
+
+    #version 130
+
+/*** Enum constans ************************************/
+
+    #define PAINT_TYPE_COLOR			0x1B00
+    #define PAINT_TYPE_LINEAR_GRADIENT	0x1B01
+    #define PAINT_TYPE_RADIAL_GRADIENT	0x1B02
+    #define PAINT_TYPE_PATTERN			0x1B03
+
+    #define DRAW_IMAGE_NORMAL 			0x1F00
+    #define DRAW_IMAGE_MULTIPLY 		0x1F01
+
+    #define DRAW_MODE_PATH				0
+    #define DRAW_MODE_IMAGE				1
+
+/*** Interpolated *************************************/
+
+    in vec2 varying_uv;
+
+/*** Input ********************************************/
+
+    // Basic rendering Mode
+    uniform int drawMode;
+    // Image
+    uniform sampler2D imageSampler;
+    uniform int imageMode;
+    // Paint
+    uniform int paintType;
+    uniform vec4 paintColor;
+    uniform vec2 paintParams[3];
+    uniform mat3 surfaceToPaintMatrix;
+    // Gradient
+    uniform sampler1D rampSampler;
+    // Pattern
+    uniform sampler2D patternSampler;
+    // Color transform
+    uniform vec4 scaleFactorBias[2];
+
+/*** Output *******************************************/
+
+    out vec4 fragColor;
+
+/*** Functions ****************************************/
+
+    // 9.3.1 Linear Gradients
+    float linearGradient(vec2 fragCoord, vec2 p0, vec2 p1){
+
+        float x  = fragCoord.x;
+        float y  = fragCoord.y;
+        float x0 = p0.x;
+        float y0 = p0.y;
+        float x1 = p1.x;
+        float y1 = p1.y;
+        float dx = x1 - x0;
+        float dy = y1 - y0;
+    
+        return
+            ( dx * (x - x0) + dy * (y - y0) )
+         /  ( dx*dx + dy*dy );
+    }
+
+    // 9.3.2 Radial Gradients
+    float radialGradient(vec2 fragCoord, vec2 centerCoord, vec2 focalCoord, float r){
+
+        float x   = fragCoord.x;
+        float y   = fragCoord.y;
+        float cx  = centerCoord.x;
+        float cy  = centerCoord.y;
+        float fx  = focalCoord.x;
+        float fy  = focalCoord.y;
+        float dx  = x - fx;
+        float dy  = y - fy;
+        float dfx = fx - cx;
+        float dfy = fy - cy;
+    
+        return
+            ( (dx * dfx + dy * dfy) + sqrt(r*r*(dx*dx + dy*dy) - pow(dx*dfy - dy*dfx, 2.0)) )
+         /  ( r*r - (dfx*dfx + dfy*dfy) );
+    }
+
+    vec2 backToPaintSpace(vec4 fragCoord){
+
+        vec3 paintCoord = surfaceToPaintMatrix * vec3(fragCoord.xy, 1.0);
+
+        return paintCoord.xy;
+    }
+
+/*** Main thread  *************************************/
+
+    void main()
+    {
+        vec4 col;
+
+        /* Stage 6: Paint Generation */
+        switch(paintType){
+        case PAINT_TYPE_LINEAR_GRADIENT:
+            {
+                vec2  x0 = paintParams[0];
+                vec2  x1 = paintParams[1];
+                float factor = linearGradient(backToPaintSpace(gl_FragCoord), x0, x1);
+                col = texture(rampSampler, factor);
+            }
+            break;
+        case PAINT_TYPE_RADIAL_GRADIENT:
+            {
+                vec2  center = paintParams[0];
+                vec2  focal  = paintParams[1];
+                float radius = paintParams[2].x;
+                float factor = radialGradient(
+                                   backToPaintSpace(gl_FragCoord),
+                                   center,
+                                   focal,
+                                   radius);
+                col = texture(rampSampler, factor);
+            }
+            break;
+        case PAINT_TYPE_PATTERN:
+            {
+                vec2  paintCoord = backToPaintSpace(gl_FragCoord);
+                float width  = paintParams[0].x;
+                float height = paintParams[0].y;
+                vec2  texCoord = vec2(paintCoord.x / width, paintCoord.y / height);
+                col = texture(patternSampler, texCoord);
+            }
+            break;
+        default:
+        case PAINT_TYPE_COLOR:
+            col = paintColor;
+            break;
+        }
+
+        /* Stage 7: Image Interpolation */
+        if(drawMode == DRAW_MODE_IMAGE) {
+            col = texture(imageSampler, varying_uv)
+                      * (imageMode == DRAW_IMAGE_MULTIPLY ? col : vec4(1.0,1.0,1.0,1.0));
+        } 
+
+        /* Stage 8: Color Transformation, Blending, and Antialiasing */
+        fragColor = col * scaleFactorBias[0] + scaleFactorBias[1] ;
+    }
+)glsl";
+
+static const char* vsCodeColorRamp = R"glsl(
+    #version 130
+    
+    in  vec2 step;
+    in  vec4 stepColor;
+    out vec4 interpolateColor;
+
+    void main()
+    {
+        gl_Position = vec4(step.xy, 0, 1);
+        interpolateColor = stepColor;
+    }
+)glsl";
+
+static const char* fsCodeColorRamp = R"glsl(
+    #version 130
+
+    in  vec4 interpolateColor;
+    out vec4 fragColor;
+
+    void main()
+    {
+        fragColor = interpolateColor;
+    }
+)glsl";
+
 /*-----------------------------------------------------
  * Simple functions to create a VG context instance
  * on top of an existing OpenGL context.
@@ -50,12 +242,91 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
   /* setup GL projection */
   glViewport(0,0,width,height);
   
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluOrtho2D(0,width,0,height);
-  
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+  GLint  compileStatus;
+
+  /* Setup shader for rendering*/
+  {
+      GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+      glShaderSource(vs, 1, &vsCodeDraw, NULL);
+      glCompileShader(vs);
+      glGetShaderiv(vs, GL_COMPILE_STATUS, &compileStatus);
+      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+      GL_CEHCK_ERROR;
+
+      GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+      glShaderSource(fs, 1, &fsCodeDraw, NULL);
+      glCompileShader(fs);
+      glGetShaderiv(fs, GL_COMPILE_STATUS, &compileStatus);
+      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+      GL_CEHCK_ERROR;
+
+      g_context->progDraw = glCreateProgram();
+      glAttachShader(g_context->progDraw, vs);
+      glAttachShader(g_context->progDraw, fs);
+      glLinkProgram(g_context->progDraw);
+      glDeleteShader(vs);
+      glDeleteShader(fs);
+      GL_CEHCK_ERROR;
+
+      g_context->locationDraw.pos            = glGetAttribLocation(g_context->progDraw,  "pos");
+      g_context->locationDraw.textureUV      = glGetAttribLocation(g_context->progDraw,  "textureUV");
+      g_context->locationDraw.modelView      = glGetUniformLocation(g_context->progDraw, "modelView");
+      g_context->locationDraw.projection     = glGetUniformLocation(g_context->progDraw, "projection");
+      g_context->locationDraw.drawMode       = glGetUniformLocation(g_context->progDraw, "drawMode");
+      g_context->locationDraw.imageSampler   = glGetUniformLocation(g_context->progDraw, "imageSampler");
+      g_context->locationDraw.imageMode      = glGetUniformLocation(g_context->progDraw, "imageMode");
+      g_context->locationDraw.paintType      = glGetUniformLocation(g_context->progDraw, "paintType");
+      g_context->locationDraw.rampSampler    = glGetUniformLocation(g_context->progDraw, "rampSampler");
+      g_context->locationDraw.patternSampler = glGetUniformLocation(g_context->progDraw, "patternSampler");
+      g_context->locationDraw.paintParams    = glGetUniformLocation(g_context->progDraw, "paintParams");
+      g_context->locationDraw.paintColor     = glGetUniformLocation(g_context->progDraw, "paintColor");
+      g_context->locationDraw.scaleFactorBias= glGetUniformLocation(g_context->progDraw, "scaleFactorBias");
+      g_context->locationDraw.surfaceToPaintMatrix= glGetUniformLocation(g_context->progDraw, "surfaceToPaintMatrix");
+      GL_CEHCK_ERROR;
+  }
+
+  /* Setup shaders for making color ramp */
+  {
+      GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+      glShaderSource(vs, 1, &vsCodeColorRamp, NULL);
+      glCompileShader(vs);
+      glGetShaderiv(vs, GL_COMPILE_STATUS, &compileStatus);
+      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+      GL_CEHCK_ERROR;
+
+      GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+      glShaderSource(fs, 1, &fsCodeColorRamp, NULL);
+      glCompileShader(fs);
+      glGetShaderiv(fs, GL_COMPILE_STATUS, &compileStatus);
+      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+      GL_CEHCK_ERROR;
+
+      g_context->progColorRamp = glCreateProgram();
+      glAttachShader(g_context->progColorRamp, vs);
+      glAttachShader(g_context->progColorRamp, fs);
+      glLinkProgram(g_context->progColorRamp);
+      glDeleteShader(vs);
+      glDeleteShader(fs);
+      GL_CEHCK_ERROR;
+
+      g_context->locationColorRamp.step = glGetAttribLocation(g_context->progColorRamp, "step");
+      g_context->locationColorRamp.stepColor = glGetAttribLocation(g_context->progColorRamp, "stepColor");
+      GL_CEHCK_ERROR;
+  }
+
+  glUseProgram(g_context->progDraw);
+
+  /* Initialize uniform variables */
+  {
+      float mat[16];
+      shCalcOrtho2D(mat, 0, width, 0, height);
+      glUniformMatrix4fv(g_context->locationDraw.projection, 1, GL_FALSE, mat);
+      glUniform1i(g_context->locationDraw.paintType, VG_PAINT_TYPE_COLOR);
+      GLfloat factor_bias[8] = {1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0};
+      glUniform4fv(g_context->locationDraw.scaleFactorBias, 2, factor_bias);
+      glUniform1i(g_context->locationDraw.imageMode, VG_DRAW_IMAGE_NORMAL);
+      GL_CEHCK_ERROR;
+  }
   
   return VG_TRUE;
 }
@@ -71,12 +342,12 @@ VG_API_CALL void vgResizeSurfaceSH(VGint width, VGint height)
   /* setup GL projection */
   glViewport(0,0,width,height);
   
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluOrtho2D(0,width,0,height);
-  
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
+  /* Setup projection matrix */
+  float mat[16];
+  shCalcOrtho2D(mat, 0, width, 0, height);
+  glUseProgram(context->progDraw);
+  glUniformMatrix4fv(context->locationDraw.projection, 1, GL_FALSE, mat);
+  GL_CEHCK_ERROR;
   
   VG_RETURN(VG_NO_RETVAL);
 }
@@ -111,8 +382,8 @@ void VGContext_ctor(VGContext *c)
   
   /* GetString info */
   strncpy(c->vendor, "Ivan Leben", sizeof(c->vendor));
-  strncpy(c->renderer, "ShivaVG 0.1.0", sizeof(c->renderer));
-  strncpy(c->version, "1.0", sizeof(c->version));
+  strncpy(c->renderer, "ShivaVG-2", sizeof(c->renderer));
+  strncpy(c->version, "2.0.0", sizeof(c->version));
   strncpy(c->extensions, "", sizeof(c->extensions));
   
   /* Mode settings */

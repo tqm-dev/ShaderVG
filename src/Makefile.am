@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libOpenVG.la
-libOpenVG_la_CFLAGS = -ansi -pedantic -I$(top_builddir)/include/vg
+libOpenVG_la_CFLAGS = -pedantic -I$(top_builddir)/include/vg
 libOpenVG_la_SOURCES =\
 	shDefs.h\
 	shExtensions.h\

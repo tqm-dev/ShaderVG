@@ -92,10 +92,12 @@ void updateBlendingStateGL(VGContext *c, int alphaIsOne)
 
 static void shDrawStroke(SHPath *p)
 {
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(2, GL_FLOAT, 0, p->stroke.items);
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  glEnableVertexAttribArray(context->locationDraw.pos);
+  glVertexAttribPointer(context->locationDraw.pos, 2, GL_FLOAT, GL_FALSE, 0, p->stroke.items);
   glDrawArrays(GL_TRIANGLES, 0, p->stroke.size);
-  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableVertexAttribArray(context->locationDraw.pos);
+  GL_CEHCK_ERROR;
 }
 
 /*-----------------------------------------------------------
@@ -110,8 +112,9 @@ static void shDrawVertices(SHPath *p, GLenum mode)
   
   /* We separate vertex arrays by contours to properly
      handle the fill modes */
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glVertexPointer(2, GL_FLOAT, sizeof(SHVertex), p->vertices.items);
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  glEnableVertexAttribArray(context->locationDraw.pos);
+  glVertexAttribPointer(context->locationDraw.pos, 2, GL_FLOAT, GL_FALSE, sizeof(SHVertex), p->vertices.items);
   
   while (start < p->vertices.size) {
     size = p->vertices.items[start].flags;
@@ -119,25 +122,8 @@ static void shDrawVertices(SHPath *p, GLenum mode)
     start += size;
   }
   
-  glDisableClientState(GL_VERTEX_ARRAY);
-}
-
-/*-------------------------------------------------------------
- * Draw a single quad that covers the bounding box of a path
- *-------------------------------------------------------------*/
-
-static void shDrawBoundBox(VGContext *c, SHPath *p, VGPaintMode mode)
-{
-  SHfloat K = 1.0f;
-  if (mode == VG_STROKE_PATH)
-    K = SH_CEIL(c->strokeMiterLimit * c->strokeLineWidth) + 1.0f;
-  
-  glBegin(GL_QUADS);
-  glVertex2f(p->min.x-K, p->min.y-K);
-  glVertex2f(p->max.x+K, p->min.y-K);
-  glVertex2f(p->max.x+K, p->max.y+K);
-  glVertex2f(p->min.x-K, p->max.y+K);
-  glEnd();
+  glDisableVertexAttribArray(context->locationDraw.pos);
+  GL_CEHCK_ERROR;
 }
 
 /*--------------------------------------------------------------
@@ -171,29 +157,33 @@ static void shDrawPaintMesh(VGContext *c, SHVector2 *min, SHVector2 *max,
 
   switch (p->type) {
   case VG_PAINT_TYPE_LINEAR_GRADIENT:
-    shDrawLinearGradientMesh(p, min, max, mode, texUnit);
-    break;
+    shLoadLinearGradientMesh(p, mode, VG_MATRIX_PATH_USER_TO_SURFACE);
+    break; 
 
   case VG_PAINT_TYPE_RADIAL_GRADIENT:
-    shDrawRadialGradientMesh(p, min, max, mode, texUnit);
-    break;
+    shLoadRadialGradientMesh(p, mode, VG_MATRIX_PATH_USER_TO_SURFACE);
+    break; 
     
   case VG_PAINT_TYPE_PATTERN:
     if (p->pattern != VG_INVALID_HANDLE) {
-      shDrawPatternMesh(p, min, max, mode, texUnit);
+    shLoadPatternMesh(p, mode, VG_MATRIX_PATH_USER_TO_SURFACE);
       break;
     }/* else behave as a color paint */
   
   case VG_PAINT_TYPE_COLOR:
-    glColor4fv((GLfloat*)&p->color);
-    glBegin(GL_QUADS);
-    glVertex2f(pmin.x, pmin.y);
-    glVertex2f(pmax.x, pmin.y);
-    glVertex2f(pmax.x, pmax.y);
-    glVertex2f(pmin.x, pmax.y);
-    glEnd();
-    break;
+    shLoadOneColorMesh(p);
+    break;  
   }
+
+  GLfloat v[] = { pmin.x, pmin.y,
+                  pmax.x, pmin.y,
+                  pmin.x, pmax.y,
+                  pmax.x, pmax.y };
+  glEnableVertexAttribArray(c->locationDraw.pos);
+  glVertexAttribPointer(c->locationDraw.pos, 2, GL_FLOAT, GL_FALSE, 0, v);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glDisableVertexAttribArray(c->locationDraw.pos);
+  GL_CEHCK_ERROR;
 }
 
 VGboolean shIsTessCacheValid (VGContext *c, SHPath *p)
@@ -314,20 +304,16 @@ VG_API_CALL void vgDrawPath(VGPath path, VGbitfield paintModes)
     shFindBoundbox(p);
   }
   
-  /* TODO: Turn antialiasing on/off */
-  glDisable(GL_LINE_SMOOTH);
-  glDisable(GL_POLYGON_SMOOTH);
-  glEnable(GL_MULTISAMPLE);
-  
   /* Pick paint if available or default*/
   fill = (context->fillPaint ? context->fillPaint : &context->defaultPaint);
   stroke = (context->strokePaint ? context->strokePaint : &context->defaultPaint);
   
   /* Apply transformation */
   shMatrixToGL(&context->pathTransform, mgl);
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glMultMatrixf(mgl);
+  glUseProgram(context->progDraw);
+  glUniformMatrix4fv(context->locationDraw.modelView, 1, GL_FALSE, mgl);
+  glUniform1i(context->locationDraw.drawMode, 0); /* drawMode: path */
+  GL_CEHCK_ERROR;
   
   if (paintModes & VG_FILL_PATH) {
     
@@ -349,24 +335,11 @@ VG_API_CALL void vgDrawPath(VGPath path, VGbitfield paintModes)
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     shDrawPaintMesh(context, &p->min, &p->max, VG_FILL_PATH, GL_TEXTURE0);
 
-    /* Clear stencil for sure */
-    /* TODO: Is there any way to do this safely along
-       with the paint generation pass?? */
-    glDisable(GL_BLEND);
-    glDisable(GL_MULTISAMPLE);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    shDrawBoundBox(context, p, VG_FILL_PATH);
-    
     /* Reset state */
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDisable(GL_STENCIL_TEST);
     glDisable(GL_BLEND);
   }
-  
-  /* TODO: Turn antialiasing on/off */
-  glDisable(GL_LINE_SMOOTH);
-  glDisable(GL_POLYGON_SMOOTH);
-  glEnable(GL_MULTISAMPLE);
   
   if ((paintModes & VG_STROKE_PATH) &&
       context->strokeLineWidth > 0.0f) {
@@ -398,12 +371,6 @@ VG_API_CALL void vgDrawPath(VGPath path, VGbitfield paintModes)
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       shDrawPaintMesh(context, &p->min, &p->max, VG_STROKE_PATH, GL_TEXTURE0);
       
-      /* Clear stencil for sure */
-      glDisable(GL_BLEND);
-      glDisable(GL_MULTISAMPLE);
-      glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-      shDrawBoundBox(context, p, VG_STROKE_PATH);
-      
       /* Reset state */
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
       glDisable(GL_STENCIL_TEST);
@@ -417,20 +384,12 @@ VG_API_CALL void vgDrawPath(VGPath path, VGbitfield paintModes)
         c.a *= context->strokeLineWidth;
       
       /* Draw contour as a line */
-      glDisable(GL_MULTISAMPLE);
       glEnable(GL_BLEND);
-      glEnable(GL_LINE_SMOOTH);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glColor4fv((GLfloat*)&c);
       shDrawVertices(p, GL_LINE_STRIP);
-      
       glDisable(GL_BLEND);
-      glDisable(GL_LINE_SMOOTH);
     }
   }
-  
-  
-  glPopMatrix();
   
   if (context->scissoring == VG_TRUE)
     glDisable( GL_SCISSOR_TEST );
@@ -442,8 +401,6 @@ VG_API_CALL void vgDrawImage(VGImage image)
 {
   SHImage *i;
   SHfloat mgl[16];
-  SHfloat texGenS[4] = {0,0,0,0};
-  SHfloat texGenT[4] = {0,0,0,0};
   SHPaint *fill;
   SHVector2 min, max;
   SHRectangle *rect;
@@ -468,114 +425,79 @@ VG_API_CALL void vgDrawImage(VGImage image)
   /* Apply image-user-to-surface transformation */
   i = (SHImage*)image;
   shMatrixToGL(&context->imageTransform, mgl);
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glMultMatrixf(mgl);
+  glUseProgram(context->progDraw);
+  glUniformMatrix4fv(context->locationDraw.modelView, 1, GL_FALSE, mgl);
+  glUniform1i(context->locationDraw.drawMode, 1); /* drawMode: image */
+  GL_CEHCK_ERROR;
   
   /* Clamp to edge for proper filtering, modulate for multiply mode */
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, i->texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
   
   /* Adjust antialiasing to settings */
   if (context->imageQuality == VG_IMAGE_QUALITY_NONANTIALIASED) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glDisable(GL_MULTISAMPLE);
   }else{
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glEnable(GL_MULTISAMPLE);
   }
   
-  /* Generate image texture coords automatically */
-  texGenS[0] = 1.0f / i->texwidth;
-  texGenT[1] = 1.0f / i->texheight;
-  glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-  glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-  glTexGenfv(GL_S, GL_OBJECT_PLANE, texGenS);
-  glTexGenfv(GL_T, GL_OBJECT_PLANE, texGenT);
-  glEnable(GL_TEXTURE_GEN_S);
-  glEnable(GL_TEXTURE_GEN_T);
+  glEnableVertexAttribArray(context->locationDraw.textureUV);
+  GLfloat uv[] = { 0.0f, 0.0f,
+                   1.0f, 0.0f,
+                   0.0f, 1.0f,
+                   1.0f, 1.0f };
+  glVertexAttribPointer(context->locationDraw.textureUV, 2, GL_FLOAT, GL_FALSE, 0, uv);
+  glUniform1i(context->locationDraw.imageSampler, 0);
+  GL_CEHCK_ERROR;
   
   /* Pick fill paint */
   fill = (context->fillPaint ? context->fillPaint : &context->defaultPaint);
   
-  /* Use paint color when multiplying with a color-paint */
-  if (context->imageMode == VG_DRAW_IMAGE_MULTIPLY &&
-      fill->type == VG_PAINT_TYPE_COLOR)
-      glColor4fv((GLfloat*)&fill->color);
-  else glColor4f(1,1,1,1);
-  
-  
-  /* Check image drawing mode */
-  if (context->imageMode == VG_DRAW_IMAGE_MULTIPLY &&
-      fill->type != VG_PAINT_TYPE_COLOR) {
-    
-    /* Draw image quad into stencil */
-    glDisable(GL_BLEND);
-    glDisable(GL_TEXTURE_2D);
-    glEnable(GL_STENCIL_TEST);
-    glStencilFunc(GL_ALWAYS, 1, 1);
-    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-    glColorMask(GL_FALSE,GL_FALSE,GL_FALSE,GL_FALSE);
-    
-    glBegin(GL_QUADS);
-    glVertex2i(0, 0);
-    glVertex2i(i->width, 0);
-    glVertex2i(i->width, i->height);
-    glVertex2i(0, i->height);
-    glEnd();
+  /* Setup blending */
+  updateBlendingStateGL(context, 0);
 
-    /* Setup blending */
-    updateBlendingStateGL(context, 0);
+  /* Draw textured quad */
+  glEnable(GL_TEXTURE_2D);
     
-    /* Draw gradient mesh where stencil 1*/
-    glEnable(GL_TEXTURE_2D);
-    glStencilFunc(GL_EQUAL, 1, 1);
-    glStencilOp(GL_ZERO,GL_ZERO,GL_ZERO);
-    glColorMask(GL_TRUE,GL_TRUE,GL_TRUE,GL_TRUE);
-    
-    SET2(min,0,0);
-    SET2(max, (SHfloat)i->width, (SHfloat)i->height);
-    if (fill->type == VG_PAINT_TYPE_RADIAL_GRADIENT) {
-      shDrawRadialGradientMesh(fill, &min, &max, VG_FILL_PATH, GL_TEXTURE1);
-    }else if (fill->type == VG_PAINT_TYPE_LINEAR_GRADIENT) {
-      shDrawLinearGradientMesh(fill, &min, &max, VG_FILL_PATH, GL_TEXTURE1);
-    }else if (fill->type == VG_PAINT_TYPE_PATTERN) {
-      shDrawPatternMesh(fill, &min, &max, VG_FILL_PATH, GL_TEXTURE1); }
-    
-    glActiveTexture(GL_TEXTURE0);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_STENCIL_TEST);
-    
-  }else if (context->imageMode == VG_DRAW_IMAGE_STENCIL) {
-    
-    
-  }else{/* Either normal mode or multiplying with a color-paint */
-    
-    /* Setup blending */
-    updateBlendingStateGL(context, 0);
-
-    /* Draw textured quad */
-    glEnable(GL_TEXTURE_2D);
-    
-    glBegin(GL_QUADS);
-    glVertex2i(0, 0);
-    glVertex2i(i->width, 0);
-    glVertex2i(i->width, i->height);
-    glVertex2i(0, i->height);
-    glEnd();
-    
-    glDisable(GL_TEXTURE_2D);
+  if (context->imageMode == VG_DRAW_IMAGE_MULTIPLY){
+      /* Multiply each colors */
+      glUniform1i(context->locationDraw.imageMode, VG_DRAW_IMAGE_MULTIPLY );
+      switch(fill->type){
+          case VG_PAINT_TYPE_RADIAL_GRADIENT:
+              shLoadRadialGradientMesh(fill, VG_FILL_PATH, VG_MATRIX_IMAGE_USER_TO_SURFACE);
+              break;
+          case VG_PAINT_TYPE_LINEAR_GRADIENT:
+              shLoadLinearGradientMesh(fill, VG_FILL_PATH, VG_MATRIX_IMAGE_USER_TO_SURFACE);
+              break;
+          case VG_PAINT_TYPE_PATTERN:
+              shLoadPatternMesh(fill, VG_FILL_PATH, VG_MATRIX_IMAGE_USER_TO_SURFACE);
+              break;
+          default:
+          case VG_PAINT_TYPE_COLOR:
+              shLoadOneColorMesh(fill);
+              break;
+      }
+  } else {
+      glUniform1i(context->locationDraw.imageMode, VG_DRAW_IMAGE_NORMAL );
   }
-  
-  
-  glDisable(GL_TEXTURE_GEN_S);
-  glDisable(GL_TEXTURE_GEN_T);
-  glPopMatrix();
+
+  GLfloat v[] = { 0.0f, 0.0f,
+                  i->width, 0.0f,
+                  0.0f, i->height,
+                  i->width, i->height };
+  glVertexAttribPointer(context->locationDraw.pos, 2, GL_FLOAT, GL_FALSE, 0, v);
+  glEnableVertexAttribArray(context->locationDraw.pos);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glDisableVertexAttribArray(context->locationDraw.pos);
+    
+  glDisable(GL_TEXTURE_2D);
+  GL_CEHCK_ERROR;
+ 
+  glDisableVertexAttribArray(context->locationDraw.textureUV);
 
   if (context->scissoring == VG_TRUE)
     glDisable( GL_SCISSOR_TEST );

@@ -164,12 +164,21 @@ SHfloat getMaxFloat();
 #  include <GL/gl.h>
 #  include <GL/glu.h>
 #else
-#  include <GL/gl.h>
-#  include <GL/glu.h>
-#  include <GL/glx.h>
+#  define GL_GLEXT_PROTOTYPES
+#  include <GL/glcorearb.h>
 #endif
 
 #include "shExtensions.h"
+
+#define GL_GET_ERROR printf("glGetError() -> %d line:%d file:%s\r\n", glGetError(), __LINE__, __FILE__)
+#define GL_CEHCK_ERROR \
+ { \
+   GLint err = glGetError(); \
+   if(err){\
+       printf("glGetError() -> %d \r\n", err);\
+       assert(0);\
+   }\
+ }
 
 
 #endif /* __SHDEFS_H */

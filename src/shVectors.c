@@ -133,3 +133,44 @@ int shLineLineXsection(SHVector2 *o1, SHVector2 *v1,
   xsection->y = o1->y + t1*v1->y;
   return 1;
 }
+
+void shCalcOrtho2D(float* mat, float left, float right, float bottom, float top)
+{
+    /* http://en.wikipedia.org/wiki/Orthographic_projection */
+    const float zNear = -1.0f;
+    const float zFar = 1.0f;
+    const float inv_z = 1.0f / (zFar - zNear);
+    const float inv_y = 1.0f / (top - bottom);
+    const float inv_x = 1.0f / (right - left);
+
+    /* first column */
+    *mat++ = (2.0f*inv_x);
+    *mat++ = (0.0f);
+    *mat++ = (0.0f);
+    *mat++ = (0.0f);
+
+    /* second */
+    *mat++ = (0.0f);
+    *mat++ = (2.0*inv_y);
+    *mat++ = (0.0f);
+    *mat++ = (0.0f);
+
+    /* third */
+    *mat++ = (0.0f);
+    *mat++ = (0.0f);
+    *mat++ = (-2.0f*inv_z);
+    *mat++ = (0.0f);
+
+    /* fourth */
+    *mat++ = (-(right + left)*inv_x);
+    *mat++ = (-(top + bottom)*inv_y);
+    *mat++ = (-(zFar + zNear)*inv_z);
+    *mat++ = (1.0f);
+}
+
+void shMatrixToVG(SHMatrix3x3 *m, SHfloat mvg[9])
+{
+    mvg[0] = m->m[0][0]; mvg[3] = m->m[0][1]; mvg[6] = m->m[0][2];
+    mvg[1] = m->m[1][0]; mvg[4] = m->m[1][1]; mvg[7] = m->m[1][2];
+    mvg[2] = m->m[2][0]; mvg[5] = m->m[2][1]; mvg[8] = m->m[2][2];
+}

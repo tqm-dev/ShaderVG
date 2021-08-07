@@ -357,9 +357,6 @@ void shSetGradientTexGLState(SHPaint *p)
   case VG_COLOR_RAMP_SPREAD_REFLECT:
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT); break;
   }
-  
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-  glColor4f(1,1,1,1);
 }
 
 void shSetPatternTexGLState(SHPaint *p, VGContext *c)
@@ -388,33 +385,15 @@ void shSetPatternTexGLState(SHPaint *p, VGContext *c)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
     break;
   }
-  
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-  glColor4f(1,1,1,1);
 }
 
-int shDrawLinearGradientMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
-                             VGPaintMode mode, GLenum texUnit)
+int shLoadLinearGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 {
-  SHint i;
-  SHfloat n;
-  
-  SHfloat x1 = p->linearGradient[0];
-  SHfloat y1 = p->linearGradient[1];
-  SHfloat x2 = p->linearGradient[2];
-  SHfloat y2 = p->linearGradient[3];
-  SHVector2 c, ux, uy;
-  SHVector2 cc, uux, uuy;
-  
   SHMatrix3x3 *m;
-  SHMatrix3x3 mi;
-  SHint invertible;
-  SHVector2 corners[4];
-  SHfloat minOffset = 0.0f;
-  SHfloat maxOffset = 0.0f;
-  SHfloat left = 0.0f;
-  SHfloat right = 0.0f;
-  SHVector2 l1,r1,l2,r2;
+  SHMatrix3x3 *mu2s;
+  SHMatrix3x3 mp2s, ms2p;
+  GLfloat values[4];
+  GLfloat s2p[9];
 
   /* Pick paint transform matrix */
   SH_GETCONTEXT(0);
@@ -422,369 +401,130 @@ int shDrawLinearGradientMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
     m = &context->fillTransform;
   else if (mode == VG_STROKE_PATH)
     m = &context->strokeTransform;
-  
-  /* Gradient center and unit vectors */
-  SET2(c, x1, y1);
-  SET2(ux, x2-x1, y2-y1);
-  SET2(uy, -ux.y, ux.x);
-  n = NORM2(ux);
-  DIV2(ux, n);
-  NORMALIZE2(uy);
 
-  /* Apply paint-to-user transformation */
-  ADD2V(ux, c); ADD2V(uy, c);
-  TRANSFORM2TO(c, (*m), cc);
-  TRANSFORM2TO(ux, (*m), uux);
-  TRANSFORM2TO(uy, (*m), uuy);
-  SUB2V(ux,c); SUB2V(uy,c);
-  SUB2V(uux,cc); SUB2V(uuy,cc);
-  
-  /* Boundbox corners */
-  SET2(corners[0], min->x, min->y);
-  SET2(corners[1], max->x, min->y);
-  SET2(corners[2], max->x, max->y);
-  SET2(corners[3], min->x, max->y);
-  
-  /* Find inverse transformation (back to paint space) */
-  invertible = shInvertMatrix(m, &mi);
-  if (!invertible || n==0.0f) {
-    
-    /* Fill boundbox with color at offset 1 */
-    SHColor *c = &p->stops.items[p->stops.size-1].color;
-    glColor4fv((GLfloat*)c); glBegin(GL_QUADS);
-    for (i=0; i<4; ++i) glVertex2fv((GLfloat*)&corners[i]);
-    glEnd();
-    return 1;
-  }
-  
-  /*--------------------------------------------------------*/
-  
-  for (i=0; i<4; ++i) {
-    
-    /* Find min/max offset and perpendicular span */
-    SHfloat o, s;
-    TRANSFORM2(corners[i], mi);
-    SUB2V(corners[i], c);
-    o = DOT2(corners[i], ux) / n;
-    s = DOT2(corners[i], uy);
-    if (o < minOffset || i==0) minOffset = o;
-    if (o > maxOffset || i==0) maxOffset = o;
-    if (s < left || i==0) left = s;
-    if (s > right || i==0) right = s;
-  }
-  
-  /*---------------------------------------------------------*/
-  
-  /* Corners of boundbox in gradient system */
-  SET2V(l1, cc); SET2V(r1, cc);
-  SET2V(l2, cc); SET2V(r2, cc);
-  OFFSET2V(l1, uuy, left);  OFFSET2V(l1, uux, minOffset * n);
-  OFFSET2V(r1, uuy, right); OFFSET2V(r1, uux, minOffset * n);
-  OFFSET2V(l2, uuy, left);  OFFSET2V(l2, uux, maxOffset * n);
-  OFFSET2V(r2, uuy, right); OFFSET2V(r2, uux, maxOffset * n);
-  
-  /* Draw quad using color-ramp texture */
-  glActiveTexture(texUnit);
+  /* Pick user-to-surface transform matrix */
+  if (matrixMode == VG_MATRIX_PATH_USER_TO_SURFACE)
+     mu2s = &context->pathTransform;
+  else
+     mu2s = &context->imageTransform;
+
+  /* 
+   * Make matrix that will get transformed 
+   * back from surface to paint space
+   */
+  MULMATMAT((*mu2s), (*m), mp2s);
+  shInvertMatrix(&mp2s, &ms2p);
+
+  /* Setup shader */
+  glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_LINEAR_GRADIENT);
+  glUniform2fv(context->locationDraw.paintParams, 2, p->linearGradient);
+  shMatrixToVG(&ms2p, (SHfloat*)s2p);
+  glUniformMatrix3fv(context->locationDraw.surfaceToPaintMatrix, 1, GL_FALSE, s2p);
+  glActiveTexture(GL_TEXTURE1);
   shSetGradientTexGLState(p);
-  
   glEnable(GL_TEXTURE_1D);
-  glBegin(GL_QUAD_STRIP);
-  
-  glMultiTexCoord1f(texUnit, minOffset);
-  glVertex2fv((GLfloat*)&r1);
-  glVertex2fv((GLfloat*)&l1);
-  
-  glMultiTexCoord1f(texUnit, maxOffset);
-  glVertex2fv((GLfloat*)&r2);
-  glVertex2fv((GLfloat*)&l2);
-  
-  glEnd();
-  glDisable(GL_TEXTURE_1D);
+  glUniform1i(context->locationDraw.rampSampler, 1);
+  GL_CEHCK_ERROR;
 
-  return 1;
+  return 1; 
 }
 
-int shDrawRadialGradientMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
-                             VGPaintMode mode, GLenum texUnit)
+int shLoadRadialGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 {
-  SHint i, j;
-  float a, n;
-  
-  SHfloat cx = p->radialGradient[0];
-  SHfloat cy = p->radialGradient[1];
-  SHfloat fx = p->radialGradient[2];
-  SHfloat fy = p->radialGradient[3];
-  float r = p->radialGradient[4];
-  float fcx, fcy, rr, C;
-  
-  SHVector2 ux;
-  SHVector2 uy;
-  SHVector2 c, f;
-  SHVector2 cf;
-
   SHMatrix3x3 *m;
-  SHMatrix3x3 mi;
-  SHint invertible;
-  SHVector2 corners[4];
-  SHVector2 fcorners[4];
-  SHfloat minOffset=0.0f;
-  SHfloat maxOffset=0.0f;
-  
-  SHint maxI=0, maxJ=0;
-  SHfloat maxA=0.0f;
-  SHfloat startA=0.0f;
-  
-  int numsteps = 100;
-  float step = 2*PI/numsteps;
-  SHVector2 tmin, tmax;
-  SHVector2 min1, max1, min2, max2;
-  
+  SHMatrix3x3 *mu2s;
+  SHMatrix3x3 mp2s, ms2p;
+  GLfloat s2p[9];
+
   /* Pick paint transform matrix */
   SH_GETCONTEXT(0);
   if (mode == VG_FILL_PATH)
     m = &context->fillTransform;
   else if (mode == VG_STROKE_PATH)
     m = &context->strokeTransform;
-  
-  /* Move focus into circle if outside */
-  SET2(cf, fx,fy);
-  SUB2(cf, cx,cy);
-  n = NORM2(cf);
-  if (n > r) {
-    DIV2(cf, n);
-    fx = cx + 0.995f * r * cf.x;
-    fy = cy + 0.995f * r * cf.y;
-  }
-  
-  /* Precalculations */
-  rr = r*r;
-  fcx = fx - cx;
-  fcy = fy - cy;
-  C = fcx*fcx + fcy*fcy - rr;
-  
-  /* Apply paint-to-user transformation
-     to focus and unit vectors */
-  SET2(f, fx, fy);
-  SET2(c, cx, cy);
-  SET2(ux, 1, 0);
-  SET2(uy, 0, 1);
-  ADD2(ux, cx, cy);
-  ADD2(uy, cx, cy);
-  TRANSFORM2(f, (*m));
-  TRANSFORM2(c, (*m));
-  TRANSFORM2(ux, (*m));
-  TRANSFORM2(uy, (*m));
-  SUB2V(ux, c); SUB2V(uy, c);
-  
-  /* Boundbox corners */
-  SET2(corners[0], min->x, min->y);
-  SET2(corners[1], max->x, min->y);
-  SET2(corners[2], max->x, max->y);
-  SET2(corners[3], min->x, max->y);
-  
-  /* Find inverse transformation (back to paint space) */
-  invertible = shInvertMatrix(m, &mi);
-  if (!invertible || r <= 0.0f) {
-    
-    /* Fill boundbox with color at offset 1 */
-    SHColor *c = &p->stops.items[p->stops.size-1].color;
-    glColor4fv((GLfloat*)c); glBegin(GL_QUADS);
-    for (i=0; i<4; ++i) glVertex2fv((GLfloat*)&corners[i]);
-    glEnd();
-    return 1;
-  }
-  
-  /*--------------------------------------------------------*/
-  
-  /* Find min/max offset */
-  for (i=0; i<4; ++i) {
-    
-    /* Transform to paint space */
-    SHfloat ax,ay, A,B,D,t, off;
-    TRANSFORM2TO(corners[i], mi, fcorners[i]);
-    SUB2(fcorners[i], fx, fy);
-    n = NORM2(fcorners[i]);
-    if (n == 0.0f) {
-      
-      /* Avoid zero-length vectors */
-      off = 0.0f;
-      
-    }else{
-      
-      /* Distance from focus to circle at corner angle */
-      DIV2(fcorners[i], n);
-      ax = fcorners[i].x;
-      ay = fcorners[i].y;
-      A = ax*ax + ay*ay;
-      B = 2 * (fcx*ax + fcy*ay);
-      D = B*B - 4*A*C;
-      t = (-B + SH_SQRT(D)) / (2*A);
-      
-      /* Relative offset of boundbox corner */
-      if (D <= 0.0f) off = 1.0f;
-      else off = n / t;
-    }
-    
-    /* Find smallest and largest offset */
-    if (off < minOffset || i==0) minOffset = off;
-    if (off > maxOffset || i==0) maxOffset = off;
-  }
-  
-  /* Is transformed focus inside original boundbox? */
-  if (f.x >= min->x && f.x <= max->x &&
-      f.y >= min->y && f.y <= max->y) {
-    
-    /* Draw whole circle */
-    minOffset = 0.0f;
-    startA = 0.0f;
-    maxA = 2*PI;
-    
-  }else{
-    
-    /* Find most distant corner pair */
-    for (i=0; i<3; ++i) {
-      if (ISZERO2(fcorners[i])) continue;
-      for (j=i+1; j<4; ++j) {
-        if (ISZERO2(fcorners[j])) continue;
-        a = ANGLE2N(fcorners[i], fcorners[j]);
-        if (a > maxA || maxA == 0.0f)
-          {maxA=a; maxI=i; maxJ=j;}
-      }}
-    
-    /* Pick starting angle */
-    if (CROSS2(fcorners[maxI],fcorners[maxJ]) > 0.0f)
-      startA = shVectorOrientation(&fcorners[maxI]);
-    else startA = shVectorOrientation(&fcorners[maxJ]);
-  }
-  
-  /*---------------------------------------------------------*/
-  
-  /* TODO: for minOffset we'd actually need to find minimum
-     of the gradient function when X and Y are substitued
-     with a line equation for each bound-box edge. As a
-     workaround we use 0.0f for now. */
-  minOffset = 0.0f;
-  step = PI/50;
-  numsteps = (SHint)SH_CEIL(maxA / step) + 1;
-  
-  glActiveTexture(texUnit);
+
+  /* Pick user-to-surface transform matrix */
+  if (matrixMode == VG_MATRIX_PATH_USER_TO_SURFACE)
+     mu2s = &context->pathTransform;
+  else
+     mu2s = &context->imageTransform;
+
+  /* 
+   * Make matrix that will get transformed 
+   * back from surface to paint space
+   */
+  MULMATMAT((*mu2s), (*m), mp2s);
+  shInvertMatrix(&mp2s, &ms2p);
+
+  /* Setup shader */
+  glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_RADIAL_GRADIENT);
+  glUniform2fv(context->locationDraw.paintParams, 3, p->radialGradient);
+  shMatrixToVG(&ms2p, (SHfloat*)s2p);
+  glUniformMatrix3fv(context->locationDraw.surfaceToPaintMatrix, 1, GL_FALSE, s2p);
+  glActiveTexture(GL_TEXTURE1);
   shSetGradientTexGLState(p);
-  
   glEnable(GL_TEXTURE_1D);
-  glBegin(GL_QUADS);
-  
-  /* Walk the steps and draw gradient mesh */
-  for (i=0, a=startA; i<numsteps; ++i, a+=step) {
-    
-    /* Distance from focus to circle border
-         at current angle (gradient space) */
-    float ax = SH_COS(a);
-    float ay = SH_SIN(a);
-    float A = ax*ax + ay*ay;
-    float B = 2 * (fcx*ax + fcy*ay);
-    float D = B*B - 4*A*C;
-    float t = (-B + SH_SQRT(D)) / (2*A);
-    if (D <= 0.0f) t = 0.0f;
-    
-    /* Vectors pointing towards minimum and maximum
-         offset at current angle (gradient space) */
-    tmin.x = ax * t * minOffset;
-    tmin.y = ay * t * minOffset;
-    tmax.x = ax * t * maxOffset;
-    tmax.y = ay * t * maxOffset;
-    
-    /* Transform back to user space */
-    min2.x = f.x + tmin.x * ux.x + tmin.y * uy.x;
-    min2.y = f.y + tmin.x * ux.y + tmin.y * uy.y;
-    max2.x = f.x + tmax.x * ux.x + tmax.y * uy.x;
-    max2.y = f.y + tmax.x * ux.y + tmax.y * uy.y;
-    
-    /* Draw quad */
-    if (i!=0) {
-      glMultiTexCoord1f(texUnit, minOffset);
-      glVertex2fv((GLfloat*)&min1);
-      glVertex2fv((GLfloat*)&min2);
-      glMultiTexCoord1f(texUnit, maxOffset);
-      glVertex2fv((GLfloat*)&max2);
-      glVertex2fv((GLfloat*)&max1);
-    }
-    
-    /* Save prev points */
-    min1 = min2;
-    max1 = max2;
-  }
-  
-  glEnd();
-  glDisable(GL_TEXTURE_1D);
+  glUniform1i(context->locationDraw.rampSampler, 1);
+  GL_CEHCK_ERROR;
 
-  return 1;
+  return 1; 
 }
 
-int shDrawPatternMesh(SHPaint *p, SHVector2 *min, SHVector2 *max,
-                      VGPaintMode mode, GLenum texUnit)
+int shLoadPatternMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 {
+  SHImage *i;
+  GLfloat size[2];
   SHMatrix3x3 *m;
-  SHMatrix3x3 mi;
-  SHfloat migl[16];
-  SHint invertible;
-  SHVector2 corners[4];
-  VGfloat sx, sy;
-  SHImage *img;
-  int i;
-  
+  SHMatrix3x3 *mu2s;
+  SHMatrix3x3 mp2s, ms2p;
+  GLfloat s2p[9];
+
   /* Pick paint transform matrix */
   SH_GETCONTEXT(0);
   if (mode == VG_FILL_PATH)
     m = &context->fillTransform;
   else if (mode == VG_STROKE_PATH)
     m = &context->strokeTransform;
-  
-  /* Boundbox corners */
-  SET2(corners[0], min->x, min->y);
-  SET2(corners[1], max->x, min->y);
-  SET2(corners[2], max->x, max->y);
-  SET2(corners[3], min->x, max->y);
-  
-  /* Find inverse transformation (back to paint space) */
-  invertible = shInvertMatrix(m, &mi);
-  if (!invertible) {
-    
-    /* Fill boundbox with tile fill color */
-    SHColor *c = &context->tileFillColor;
-    glColor4fv((GLfloat*)c); glBegin(GL_QUADS);
-    for (i=0; i<4; ++i) glVertex2fv((GLfloat*)&corners[i]);
-    glEnd();
-    return 1;
-  }
-  
-  
-  /* Setup texture coordinate transform */
-  img = (SHImage*)p->pattern;
-  sx = 1.0f/(VGfloat)img->texwidth;
-  sy = 1.0f/(VGfloat)img->texheight;
-  
-  glActiveTexture(texUnit);
-  shMatrixToGL(&mi, migl);
-  glMatrixMode(GL_TEXTURE);
-  glPushMatrix();
-  glScalef(sx, sy, 1.0f);
-  glMultMatrixf(migl);
 
+  /* Pick user-to-surface transform matrix */
+  if (matrixMode == VG_MATRIX_PATH_USER_TO_SURFACE)
+     mu2s = &context->pathTransform;
+  else
+     mu2s = &context->imageTransform;
+
+  i = (SHImage*)p->pattern;
+  size[0] = i->width;
+  size[1] = i->height;
   
-  /* Draw boundbox with same texture coordinates
-     that will get transformed back to paint space */
+  /* 
+   * Make matrix that will get transformed 
+   * back from surface to paint space
+   */
+  MULMATMAT((*mu2s), (*m), mp2s);
+  shInvertMatrix(&mp2s, &ms2p);
+
+  /* Setup shader */
+  glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_PATTERN);
+  glUniform2fv(context->locationDraw.paintParams, 1, size);
+  shMatrixToVG(&ms2p, (SHfloat*)s2p);
+  glUniformMatrix3fv(context->locationDraw.surfaceToPaintMatrix, 1, GL_FALSE, s2p);
+  glActiveTexture(GL_TEXTURE1);
   shSetPatternTexGLState(p, context);
   glEnable(GL_TEXTURE_2D);
-  glBegin(GL_QUADS);
-  
-  for (i=0; i<4; ++i) {
-    glMultiTexCoord2f(texUnit, corners[i].x, corners[i].y);
-    glVertex2fv((GLfloat*)&corners[i]);
-  }
-  
-  glEnd();
-  glDisable(GL_TEXTURE_2D);
-  glPopMatrix();
-  glMatrixMode(GL_MODELVIEW);
-  return 1;
+  glUniform1i(context->locationDraw.patternSampler, 1);
+  GL_CEHCK_ERROR;
+
+  return 1; 
 }
+
+int shLoadOneColorMesh(SHPaint *p)
+{
+  SH_GETCONTEXT(0);
+
+  /* Setup shader */
+  glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_COLOR);
+  glUniform4fv(context->locationDraw.paintColor, 1, (GLfloat*)&p->color);
+
+  return 1; 
+}
+

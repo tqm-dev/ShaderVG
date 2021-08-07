@@ -209,6 +209,9 @@ void testDisplay(void)
   if (callback)
     (*callback)(interval);
   
+#if 1
+  /* TODO:Support draw string using latest version of OpenGL */
+#else
   /* Draw overlay text */
   if (overtext != NULL) {
     glColor4fv(overcolor);
@@ -218,6 +221,7 @@ void testDisplay(void)
   /* Draw fps */
   glColor4fv(overcolor);
   testDrawString(10, 10, "FPS: %d", fpsdraw);
+#endif
   
   /* Swap */
   glutSwapBuffers();
@@ -348,6 +352,18 @@ void testInit(int argc, char **argv,
   glutInitWindowPosition(0,0);
   glutInitWindowSize(w,h);
   glutCreateWindow(title);
+  const GLubyte* renderer = glGetString(GL_RENDERER);
+  const GLubyte* vendor   = glGetString(GL_VENDOR);
+  const GLubyte* ver      = glGetString(GL_VERSION);
+  const GLubyte* glslVer  = glGetString(GL_SHADING_LANGUAGE_VERSION); 
+  GLint major, minor;
+  glGetIntegerv(GL_MAJOR_VERSION, &major);
+  glGetIntegerv(GL_MINOR_VERSION, &minor);
+  printf("OpenGL on %s %s\n", vendor, renderer);
+  printf("OpenGL version supported %s\n", ver);
+  printf("GLSL version supported %s\n", glslVer);
+  printf("Will now set GL to version %i.%i\n", major, minor);
+  glutInitContextVersion(major, minor);
   
   glutReshapeFunc(testReshape);
   glutDisplayFunc(testDisplay);
