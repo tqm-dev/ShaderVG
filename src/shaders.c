@@ -30,16 +30,19 @@ const char* vgShaderVertexPipeline = R"glsl(
     in vec2 textureUV;
     uniform mat4 modelView;
     uniform mat4 projection;
+    uniform mat3 paintInverted;
 
 /*** Output ******************/
-    out vec2 varying_uv;
+    out vec2 texImageCoord;
+    out vec2 paintCoord;
 
 /*** Main thread  **************************************************/
     void main() {
 
         /* Stage 3: Transformation */
         gl_Position = projection * modelView * vec4(pos, 0, 1);
-        varying_uv = textureUV;
+        texImageCoord = textureUV;
+        paintCoord = (paintInverted * vec3(pos, 1)).xy;
 
     }
 )glsl";
@@ -63,7 +66,8 @@ const char* vgShaderFragmentPipeline = R"glsl(
 
 /*** Interpolated *************************************/
 
-    in vec2 varying_uv;
+    in vec2 texImageCoord;
+    in vec2 paintCoord;
 
 /*** Input ********************************************/
 
@@ -76,7 +80,6 @@ const char* vgShaderFragmentPipeline = R"glsl(
     uniform int paintType;
     uniform vec4 paintColor;
     uniform vec2 paintParams[3];
-    uniform mat3 surfaceToPaintMatrix;
     // Gradient
     uniform sampler1D rampSampler;
     // Pattern
@@ -126,13 +129,6 @@ const char* vgShaderFragmentPipeline = R"glsl(
          /  ( r*r - (dfx*dfx + dfy*dfy) );
     }
 
-    vec2 backToPaintSpace(vec4 fragCoord){
-
-        vec3 paintCoord = surfaceToPaintMatrix * vec3(fragCoord.xy, 1.0);
-
-        return paintCoord.xy;
-    }
-
 /*** Main thread  *************************************/
 
     void main()
@@ -145,7 +141,7 @@ const char* vgShaderFragmentPipeline = R"glsl(
             {
                 vec2  x0 = paintParams[0];
                 vec2  x1 = paintParams[1];
-                float factor = linearGradient(backToPaintSpace(gl_FragCoord), x0, x1);
+                float factor = linearGradient(paintCoord, x0, x1);
                 col = texture(rampSampler, factor);
             }
             break;
@@ -154,17 +150,12 @@ const char* vgShaderFragmentPipeline = R"glsl(
                 vec2  center = paintParams[0];
                 vec2  focal  = paintParams[1];
                 float radius = paintParams[2].x;
-                float factor = radialGradient(
-                                   backToPaintSpace(gl_FragCoord),
-                                   center,
-                                   focal,
-                                   radius);
+                float factor = radialGradient(paintCoord, center, focal, radius);
                 col = texture(rampSampler, factor);
             }
             break;
         case PAINT_TYPE_PATTERN:
             {
-                vec2  paintCoord = backToPaintSpace(gl_FragCoord);
                 float width  = paintParams[0].x;
                 float height = paintParams[0].y;
                 vec2  texCoord = vec2(paintCoord.x / width, paintCoord.y / height);
@@ -179,7 +170,7 @@ const char* vgShaderFragmentPipeline = R"glsl(
 
         /* Stage 7: Image Interpolation */
         if(drawMode == DRAW_MODE_IMAGE) {
-            col = texture(imageSampler, varying_uv)
+            col = texture(imageSampler, texImageCoord)
                       * (imageMode == DRAW_IMAGE_MULTIPLY ? col : vec4(1.0, 1.0, 1.0, 1.0));
         } 
 

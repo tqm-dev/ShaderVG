@@ -390,10 +390,8 @@ void shSetPatternTexGLState(SHPaint *p, VGContext *c)
 int shLoadLinearGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 {
   SHMatrix3x3 *m;
-  SHMatrix3x3 *mu2s;
-  SHMatrix3x3 mp2s, ms2p;
-  GLfloat values[4];
-  GLfloat s2p[9];
+  SHMatrix3x3 mu2p;
+  GLfloat u2p[9];
 
   /* Pick paint transform matrix */
   SH_GETCONTEXT(0);
@@ -402,24 +400,14 @@ int shLoadLinearGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMo
   else if (mode == VG_STROKE_PATH)
     m = &context->strokeTransform;
 
-  /* Pick user-to-surface transform matrix */
-  if (matrixMode == VG_MATRIX_PATH_USER_TO_SURFACE)
-     mu2s = &context->pathTransform;
-  else
-     mu2s = &context->imageTransform;
-
-  /* 
-   * Make matrix that will get transformed 
-   * back from surface to paint space
-   */
-  MULMATMAT((*mu2s), (*m), mp2s);
-  shInvertMatrix(&mp2s, &ms2p);
+  /* Back to paint space */
+  shInvertMatrix(m, &mu2p);
+  shMatrixToVG(&mu2p, (SHfloat*)u2p);
 
   /* Setup shader */
   glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_LINEAR_GRADIENT);
   glUniform2fv(context->locationDraw.paintParams, 2, p->linearGradient);
-  shMatrixToVG(&ms2p, (SHfloat*)s2p);
-  glUniformMatrix3fv(context->locationDraw.surfaceToPaintMatrix, 1, GL_FALSE, s2p);
+  glUniformMatrix3fv(context->locationDraw.paintInverted, 1, GL_FALSE, u2p);
   glActiveTexture(GL_TEXTURE1);
   shSetGradientTexGLState(p);
   glEnable(GL_TEXTURE_1D);
@@ -432,9 +420,8 @@ int shLoadLinearGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMo
 int shLoadRadialGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 {
   SHMatrix3x3 *m;
-  SHMatrix3x3 *mu2s;
-  SHMatrix3x3 mp2s, ms2p;
-  GLfloat s2p[9];
+  SHMatrix3x3 mu2p;
+  GLfloat u2p[9];
 
   /* Pick paint transform matrix */
   SH_GETCONTEXT(0);
@@ -443,24 +430,14 @@ int shLoadRadialGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMo
   else if (mode == VG_STROKE_PATH)
     m = &context->strokeTransform;
 
-  /* Pick user-to-surface transform matrix */
-  if (matrixMode == VG_MATRIX_PATH_USER_TO_SURFACE)
-     mu2s = &context->pathTransform;
-  else
-     mu2s = &context->imageTransform;
-
-  /* 
-   * Make matrix that will get transformed 
-   * back from surface to paint space
-   */
-  MULMATMAT((*mu2s), (*m), mp2s);
-  shInvertMatrix(&mp2s, &ms2p);
+  /* Back to paint space */
+  shInvertMatrix(m, &mu2p);
+  shMatrixToVG(&mu2p, (SHfloat*)u2p);
 
   /* Setup shader */
   glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_RADIAL_GRADIENT);
   glUniform2fv(context->locationDraw.paintParams, 3, p->radialGradient);
-  shMatrixToVG(&ms2p, (SHfloat*)s2p);
-  glUniformMatrix3fv(context->locationDraw.surfaceToPaintMatrix, 1, GL_FALSE, s2p);
+  glUniformMatrix3fv(context->locationDraw.paintInverted, 1, GL_FALSE, u2p);
   glActiveTexture(GL_TEXTURE1);
   shSetGradientTexGLState(p);
   glEnable(GL_TEXTURE_1D);
@@ -472,12 +449,10 @@ int shLoadRadialGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMo
 
 int shLoadPatternMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 {
-  SHImage *i;
-  GLfloat size[2];
+  SHImage *i = (SHImage*)p->pattern;
   SHMatrix3x3 *m;
-  SHMatrix3x3 *mu2s;
-  SHMatrix3x3 mp2s, ms2p;
-  GLfloat s2p[9];
+  SHMatrix3x3 mu2p;
+  GLfloat u2p[9];
 
   /* Pick paint transform matrix */
   SH_GETCONTEXT(0);
@@ -486,28 +461,14 @@ int shLoadPatternMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
   else if (mode == VG_STROKE_PATH)
     m = &context->strokeTransform;
 
-  /* Pick user-to-surface transform matrix */
-  if (matrixMode == VG_MATRIX_PATH_USER_TO_SURFACE)
-     mu2s = &context->pathTransform;
-  else
-     mu2s = &context->imageTransform;
-
-  i = (SHImage*)p->pattern;
-  size[0] = i->width;
-  size[1] = i->height;
-  
-  /* 
-   * Make matrix that will get transformed 
-   * back from surface to paint space
-   */
-  MULMATMAT((*mu2s), (*m), mp2s);
-  shInvertMatrix(&mp2s, &ms2p);
+  /* Back to paint space */
+  shInvertMatrix(m, &mu2p);
+  shMatrixToVG(&mu2p, (SHfloat*)u2p);
 
   /* Setup shader */
   glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_PATTERN);
-  glUniform2fv(context->locationDraw.paintParams, 1, size);
-  shMatrixToVG(&ms2p, (SHfloat*)s2p);
-  glUniformMatrix3fv(context->locationDraw.surfaceToPaintMatrix, 1, GL_FALSE, s2p);
+  glUniform2f(context->locationDraw.paintParams, (GLfloat)i->width, (GLfloat)i->height);
+  glUniformMatrix3fv(context->locationDraw.paintInverted, 1, GL_FALSE, u2p);
   glActiveTexture(GL_TEXTURE1);
   shSetPatternTexGLState(p, context);
   glEnable(GL_TEXTURE_2D);
@@ -519,11 +480,16 @@ int shLoadPatternMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMode)
 
 int shLoadOneColorMesh(SHPaint *p)
 {
+  static GLfloat id[9] = { 
+      1.0f, 0.0f, 0.0f,
+      0.0f, 1.0f, 0.0f,
+      0.0f, 0.0f, 1.0f };
   SH_GETCONTEXT(0);
 
   /* Setup shader */
   glUniform1i(context->locationDraw.paintType, VG_PAINT_TYPE_COLOR);
   glUniform4fv(context->locationDraw.paintColor, 1, (GLfloat*)&p->color);
+  glUniformMatrix3fv(context->locationDraw.paintInverted, 1, GL_FALSE, id);
 
   return 1; 
 }

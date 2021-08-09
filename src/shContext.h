@@ -121,6 +121,7 @@ typedef struct
       GLint textureUV      ;
       GLint modelView      ;
       GLint projection     ;
+      GLint paintInverted  ;
       GLint drawMode       ;
       GLint imageSampler   ;
       GLint imageMode      ;
@@ -128,7 +129,6 @@ typedef struct
       GLint rampSampler    ;
       GLint patternSampler ;
       GLint paintParams    ;
-      GLint surfaceToPaintMatrix    ;
       GLint paintColor     ;
       GLint scaleFactorBias;
   } locationDraw;

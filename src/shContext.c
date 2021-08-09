@@ -81,6 +81,7 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
       g_context->locationDraw.textureUV      = glGetAttribLocation(g_context->progDraw,  "textureUV");
       g_context->locationDraw.modelView      = glGetUniformLocation(g_context->progDraw, "modelView");
       g_context->locationDraw.projection     = glGetUniformLocation(g_context->progDraw, "projection");
+      g_context->locationDraw.paintInverted  = glGetUniformLocation(g_context->progDraw, "paintInverted");
       g_context->locationDraw.drawMode       = glGetUniformLocation(g_context->progDraw, "drawMode");
       g_context->locationDraw.imageSampler   = glGetUniformLocation(g_context->progDraw, "imageSampler");
       g_context->locationDraw.imageMode      = glGetUniformLocation(g_context->progDraw, "imageMode");
@@ -90,7 +91,6 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
       g_context->locationDraw.paintParams    = glGetUniformLocation(g_context->progDraw, "paintParams");
       g_context->locationDraw.paintColor     = glGetUniformLocation(g_context->progDraw, "paintColor");
       g_context->locationDraw.scaleFactorBias= glGetUniformLocation(g_context->progDraw, "scaleFactorBias");
-      g_context->locationDraw.surfaceToPaintMatrix= glGetUniformLocation(g_context->progDraw, "surfaceToPaintMatrix");
       GL_CEHCK_ERROR;
   }
 
