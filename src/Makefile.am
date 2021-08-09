@@ -11,6 +11,7 @@ libOpenVG_la_SOURCES =\
 	shPaint.h\
 	shGeometry.h\
 	shContext.h\
+	shaders.h\
 	shExtensions.c\
 	shArrays.c\
 	shVectors.c\
@@ -21,6 +22,7 @@ libOpenVG_la_SOURCES =\
 	shPipeline.c\
 	shParams.c\
 	shContext.c\
+	shaders.c\
 	shVgu.c
 
 VG_includedir = $(includedir)/vg

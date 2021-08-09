@@ -135,7 +135,8 @@ am_libOpenVG_la_OBJECTS = libOpenVG_la-shExtensions.lo \
 	libOpenVG_la-shPath.lo libOpenVG_la-shImage.lo \
 	libOpenVG_la-shPaint.lo libOpenVG_la-shGeometry.lo \
 	libOpenVG_la-shPipeline.lo libOpenVG_la-shParams.lo \
-	libOpenVG_la-shContext.lo libOpenVG_la-shVgu.lo
+	libOpenVG_la-shContext.lo libOpenVG_la-shaders.lo \
+	libOpenVG_la-shVgu.lo
 libOpenVG_la_OBJECTS = $(am_libOpenVG_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -339,6 +340,7 @@ libOpenVG_la_SOURCES = \
 	shPaint.h\
 	shGeometry.h\
 	shContext.h\
+	shaders.h\
 	shExtensions.c\
 	shArrays.c\
 	shVectors.c\
@@ -349,6 +351,7 @@ libOpenVG_la_SOURCES = \
 	shPipeline.c\
 	shParams.c\
 	shContext.c\
+	shaders.c\
 	shVgu.c
 
 VG_includedir = $(includedir)/vg
@@ -445,6 +448,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libOpenVG_la-shPipeline.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libOpenVG_la-shVectors.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libOpenVG_la-shVgu.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libOpenVG_la-shaders.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -539,6 +543,13 @@ libOpenVG_la-shContext.lo: shContext.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shContext.c' object='libOpenVG_la-shContext.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libOpenVG_la_CFLAGS) $(CFLAGS) -c -o libOpenVG_la-shContext.lo `test -f 'shContext.c' || echo '$(srcdir)/'`shContext.c
+
+libOpenVG_la-shaders.lo: shaders.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libOpenVG_la_CFLAGS) $(CFLAGS) -MT libOpenVG_la-shaders.lo -MD -MP -MF $(DEPDIR)/libOpenVG_la-shaders.Tpo -c -o libOpenVG_la-shaders.lo `test -f 'shaders.c' || echo '$(srcdir)/'`shaders.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libOpenVG_la-shaders.Tpo $(DEPDIR)/libOpenVG_la-shaders.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='shaders.c' object='libOpenVG_la-shaders.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libOpenVG_la_CFLAGS) $(CFLAGS) -c -o libOpenVG_la-shaders.lo `test -f 'shaders.c' || echo '$(srcdir)/'`shaders.c
 
 libOpenVG_la-shVgu.lo: shVgu.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libOpenVG_la_CFLAGS) $(CFLAGS) -MT libOpenVG_la-shVgu.lo -MD -MP -MF $(DEPDIR)/libOpenVG_la-shVgu.Tpo -c -o libOpenVG_la-shVgu.lo `test -f 'shVgu.c' || echo '$(srcdir)/'`shVgu.c
