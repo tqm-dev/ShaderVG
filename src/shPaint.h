@@ -55,8 +55,6 @@ typedef struct
   
 } SHPaint;
 
-#define SH_GRADIENT_TEX_SIZE 1024
-
 void SHPaint_ctor(SHPaint *p);
 void SHPaint_dtor(SHPaint *p);
 

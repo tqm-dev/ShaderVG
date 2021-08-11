@@ -54,9 +54,11 @@ void SHPaint_ctor(SHPaint *p)
   p->pattern = VG_INVALID_HANDLE;
   
   glGenTextures(1, &p->texture);
-  glBindTexture(GL_TEXTURE_1D, p->texture);
-  glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, SH_GRADIENT_TEX_SIZE, 0,
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glBindTexture(GL_TEXTURE_2D, p->texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SH_GRADIENT_TEX_WIDTH, SH_GRADIENT_TEX_HEIGHT, 0,
                GL_RGBA, GL_FLOAT, NULL);
+  GL_CEHCK_ERROR;
 }
 
 void SHPaint_dtor(SHPaint *p)
@@ -160,10 +162,10 @@ void shUpdateColorRampTexture(SHPaint *p)
     
     /* Pick next stop */
     stop2 = &p->stops.items[s];
-    x2 = (SHint)(stop2->offset * (SH_GRADIENT_TEX_SIZE-1));
+    x2 = (SHint)(stop2->offset * (SH_GRADIENT_TEX_WIDTH-1));
     
-    SH_ASSERT(x1 >= 0 && x1 < SH_GRADIENT_TEX_SIZE &&
-              x2 >= 0 && x2 < SH_GRADIENT_TEX_SIZE &&
+    SH_ASSERT(x1 >= 0 && x1 < SH_GRADIENT_TEX_WIDTH &&
+              x2 >= 0 && x2 < SH_GRADIENT_TEX_WIDTH &&
               x1 <= x2);
     
     dx = x2 - x1;
@@ -180,10 +182,13 @@ void shUpdateColorRampTexture(SHPaint *p)
   }
   
   /* Update texture image */
-  glBindTexture(GL_TEXTURE_1D, p->texture);
+  glBindTexture(GL_TEXTURE_2D, p->texture);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexSubImage1D(GL_TEXTURE_1D, 0, 0, SH_GRADIENT_TEX_SIZE,
-                  GL_RGBA, GL_FLOAT, rgba);
+  
+  for(int i = 0; i < SH_GRADIENT_TEX_HEIGHT ; i++)
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, i, SH_GRADIENT_TEX_WIDTH, 1, GL_RGBA, GL_FLOAT, rgba);
+
+  GL_CEHCK_ERROR;
 }
 
 void shValidateInputStops(SHPaint *p)
@@ -345,17 +350,17 @@ void shGenerateStops(SHPaint *p, SHfloat minOffset, SHfloat maxOffset,
 
 void shSetGradientTexGLState(SHPaint *p)
 {
-  glBindTexture(GL_TEXTURE_1D, p->texture);
-  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glBindTexture(GL_TEXTURE_2D, p->texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   
   switch (p->spreadMode) {
   case VG_COLOR_RAMP_SPREAD_PAD:
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); break;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); break;
   case VG_COLOR_RAMP_SPREAD_REPEAT:
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT); break;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); break;
   case VG_COLOR_RAMP_SPREAD_REFLECT:
-    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT); break;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT); break;
   }
 }
 
@@ -410,7 +415,7 @@ int shLoadLinearGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMo
   glUniformMatrix3fv(context->locationDraw.paintInverted, 1, GL_FALSE, u2p);
   glActiveTexture(GL_TEXTURE1);
   shSetGradientTexGLState(p);
-  glEnable(GL_TEXTURE_1D);
+  glEnable(GL_TEXTURE_2D);
   glUniform1i(context->locationDraw.rampSampler, 1);
   GL_CEHCK_ERROR;
 
@@ -440,7 +445,7 @@ int shLoadRadialGradientMesh(SHPaint *p, VGPaintMode mode, VGMatrixMode matrixMo
   glUniformMatrix3fv(context->locationDraw.paintInverted, 1, GL_FALSE, u2p);
   glActiveTexture(GL_TEXTURE1);
   shSetGradientTexGLState(p);
-  glEnable(GL_TEXTURE_1D);
+  glEnable(GL_TEXTURE_2D);
   glUniform1i(context->locationDraw.rampSampler, 1);
   GL_CEHCK_ERROR;
 

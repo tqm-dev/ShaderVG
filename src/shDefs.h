@@ -152,7 +152,8 @@ SHfloat getMaxFloat();
 #define SH_MAX_VERTICES 999999999
 #define SH_MAX_RECURSE_DEPTH 16
 
-#define SH_GRADIENT_TEX_SIZE       1024
+#define SH_GRADIENT_TEX_WIDTH       1024
+#define SH_GRADIENT_TEX_HEIGHT      1
 #define SH_GRADIENT_TEX_COORDSIZE   4096 /* 1024 * RGBA */
 
 /* OpenGL headers */

@@ -81,7 +81,7 @@ const char* vgShaderFragmentPipeline = R"glsl(
     uniform vec4 paintColor;
     uniform vec2 paintParams[3];
     // Gradient
-    uniform sampler1D rampSampler;
+    uniform sampler2D rampSampler;
     // Pattern
     uniform sampler2D patternSampler;
     // Color transform
@@ -142,7 +142,7 @@ const char* vgShaderFragmentPipeline = R"glsl(
                 vec2  x0 = paintParams[0];
                 vec2  x1 = paintParams[1];
                 float factor = linearGradient(paintCoord, x0, x1);
-                col = texture(rampSampler, factor);
+                col = texture(rampSampler, vec2(factor, 0.5));
             }
             break;
         case PAINT_TYPE_RADIAL_GRADIENT:
@@ -151,7 +151,7 @@ const char* vgShaderFragmentPipeline = R"glsl(
                 vec2  focal  = paintParams[1];
                 float radius = paintParams[2].x;
                 float factor = radialGradient(paintCoord, center, focal, radius);
-                col = texture(rampSampler, factor);
+                col = texture(rampSampler, vec2(factor, 0.5));
             }
             break;
         case PAINT_TYPE_PATTERN:
