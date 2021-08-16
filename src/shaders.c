@@ -52,7 +52,7 @@ static const char* vgShaderVertexPipeline = R"glsl(
         vg_FragPos = (model * vec4(pos, 0, 1)).xyz;
 
         /* Built-in 3D normal pos in world space */
-        vec3 normalPos = (model * vec4(pos, 1, 1)).xyz; // TODO:Need to be uploaded from cpu
+        vec3 normalPos = (model * vec4(pos, 1, 1)).xyz; 
         vg_Noramal = normalize(normalPos - vg_FragPos);
 
         /* 2D pos in texture space */
