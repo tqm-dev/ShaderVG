@@ -90,7 +90,8 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
-	$(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9)
+	$(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9) \
+	$(am__EXEEXT_10)
 @BUILD_VGU_TRUE@am__append_1 = test_vgu
 @BUILD_DASH_TRUE@am__append_2 = test_dash
 @BUILD_LINEAR_TRUE@am__append_3 = test_linear
@@ -100,6 +101,7 @@ noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 @BUILD_IMAGE_TRUE@am__append_7 = test_image
 @BUILD_PATTERN_TRUE@am__append_8 = test_pattern
 @BUILD_BLEND_TRUE@am__append_9 = test_blend
+@BUILD_FRAGMENT_SHADER_TRUE@am__append_10 = test_fragment_shader
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -119,6 +121,8 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_IMAGE_TRUE@am__EXEEXT_7 = test_image$(EXEEXT)
 @BUILD_PATTERN_TRUE@am__EXEEXT_8 = test_pattern$(EXEEXT)
 @BUILD_BLEND_TRUE@am__EXEEXT_9 = test_blend$(EXEEXT)
+@BUILD_FRAGMENT_SHADER_TRUE@am__EXEEXT_10 =  \
+@BUILD_FRAGMENT_SHADER_TRUE@	test_fragment_shader$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 = test_blend-test.$(OBJEXT)
 am_test_blend_OBJECTS = $(am__objects_1) \
@@ -140,16 +144,26 @@ test_dash_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_dash_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_dash_CFLAGS) \
 	$(CFLAGS) $(test_dash_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_3 = test_image-test.$(OBJEXT)
-am_test_image_OBJECTS = $(am__objects_3) \
+am__objects_3 = test_fragment_shader-test.$(OBJEXT)
+am_test_fragment_shader_OBJECTS = $(am__objects_3) \
+	test_fragment_shader-test_fragment_shader.$(OBJEXT) \
+	test_fragment_shader-test_tiger_paths.$(OBJEXT)
+test_fragment_shader_OBJECTS = $(am_test_fragment_shader_OBJECTS)
+test_fragment_shader_DEPENDENCIES = $(am__DEPENDENCIES_1)
+test_fragment_shader_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_fragment_shader_CFLAGS) $(CFLAGS) \
+	$(test_fragment_shader_LDFLAGS) $(LDFLAGS) -o $@
+am__objects_4 = test_image-test.$(OBJEXT)
+am_test_image_OBJECTS = $(am__objects_4) \
 	test_image-test_image.$(OBJEXT)
 test_image_OBJECTS = $(am_test_image_OBJECTS)
 test_image_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_image_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_image_CFLAGS) \
 	$(CFLAGS) $(test_image_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_4 = test_interpolate-test.$(OBJEXT)
-am_test_interpolate_OBJECTS = $(am__objects_4) \
+am__objects_5 = test_interpolate-test.$(OBJEXT)
+am_test_interpolate_OBJECTS = $(am__objects_5) \
 	test_interpolate-test_interpolate.$(OBJEXT)
 test_interpolate_OBJECTS = $(am_test_interpolate_OBJECTS)
 test_interpolate_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -157,32 +171,32 @@ test_interpolate_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(test_interpolate_CFLAGS) $(CFLAGS) \
 	$(test_interpolate_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_5 = test_linear-test.$(OBJEXT)
-am_test_linear_OBJECTS = $(am__objects_5) \
+am__objects_6 = test_linear-test.$(OBJEXT)
+am_test_linear_OBJECTS = $(am__objects_6) \
 	test_linear-test_linear.$(OBJEXT)
 test_linear_OBJECTS = $(am_test_linear_OBJECTS)
 test_linear_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_linear_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_linear_CFLAGS) \
 	$(CFLAGS) $(test_linear_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_6 = test_pattern-test.$(OBJEXT)
-am_test_pattern_OBJECTS = $(am__objects_6) \
+am__objects_7 = test_pattern-test.$(OBJEXT)
+am_test_pattern_OBJECTS = $(am__objects_7) \
 	test_pattern-test_pattern.$(OBJEXT)
 test_pattern_OBJECTS = $(am_test_pattern_OBJECTS)
 test_pattern_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_pattern_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_pattern_CFLAGS) \
 	$(CFLAGS) $(test_pattern_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_7 = test_radial-test.$(OBJEXT)
-am_test_radial_OBJECTS = $(am__objects_7) \
+am__objects_8 = test_radial-test.$(OBJEXT)
+am_test_radial_OBJECTS = $(am__objects_8) \
 	test_radial-test_radial.$(OBJEXT)
 test_radial_OBJECTS = $(am_test_radial_OBJECTS)
 test_radial_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_radial_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_radial_CFLAGS) \
 	$(CFLAGS) $(test_radial_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_8 = test_tiger-test.$(OBJEXT)
-am_test_tiger_OBJECTS = $(am__objects_8) \
+am__objects_9 = test_tiger-test.$(OBJEXT)
+am_test_tiger_OBJECTS = $(am__objects_9) \
 	test_tiger-test_tiger.$(OBJEXT) \
 	test_tiger-test_tiger_paths.$(OBJEXT)
 test_tiger_OBJECTS = $(am_test_tiger_OBJECTS)
@@ -190,8 +204,8 @@ test_tiger_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_tiger_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_tiger_CFLAGS) \
 	$(CFLAGS) $(test_tiger_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_9 = test_vgu-test.$(OBJEXT)
-am_test_vgu_OBJECTS = $(am__objects_9) test_vgu-test_vgu.$(OBJEXT)
+am__objects_10 = test_vgu-test.$(OBJEXT)
+am_test_vgu_OBJECTS = $(am__objects_10) test_vgu-test_vgu.$(OBJEXT)
 test_vgu_OBJECTS = $(am_test_vgu_OBJECTS)
 test_vgu_DEPENDENCIES = $(am__DEPENDENCIES_1)
 test_vgu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -232,15 +246,15 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(test_blend_SOURCES) $(test_dash_SOURCES) \
-	$(test_image_SOURCES) $(test_interpolate_SOURCES) \
-	$(test_linear_SOURCES) $(test_pattern_SOURCES) \
-	$(test_radial_SOURCES) $(test_tiger_SOURCES) \
-	$(test_vgu_SOURCES)
+	$(test_fragment_shader_SOURCES) $(test_image_SOURCES) \
+	$(test_interpolate_SOURCES) $(test_linear_SOURCES) \
+	$(test_pattern_SOURCES) $(test_radial_SOURCES) \
+	$(test_tiger_SOURCES) $(test_vgu_SOURCES)
 DIST_SOURCES = $(test_blend_SOURCES) $(test_dash_SOURCES) \
-	$(test_image_SOURCES) $(test_interpolate_SOURCES) \
-	$(test_linear_SOURCES) $(test_pattern_SOURCES) \
-	$(test_radial_SOURCES) $(test_tiger_SOURCES) \
-	$(test_vgu_SOURCES)
+	$(test_fragment_shader_SOURCES) $(test_image_SOURCES) \
+	$(test_interpolate_SOURCES) $(test_linear_SOURCES) \
+	$(test_pattern_SOURCES) $(test_radial_SOURCES) \
+	$(test_tiger_SOURCES) $(test_vgu_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -427,6 +441,9 @@ test_pattern_SOURCES = \
 test_blend_SOURCES = \
 	${EXAMPLE_SRCS} test_blend.c
 
+test_fragment_shader_SOURCES = \
+	${EXAMPLE_SRCS} test_fragment_shader.c test_tiger_paths.c
+
 test_vgu_CFLAGS = ${EXAMPLE_CF}
 test_vgu_LDADD = ${EXAMPLE_LA}
 test_vgu_LDFLAGS = ${EXAMPLE_LF}
@@ -454,6 +471,9 @@ test_pattern_LDFLAGS = ${EXAMPLE_LF}
 test_blend_CFLAGS = ${EXAMPLE_CF}
 test_blend_LDADD = ${EXAMPLE_LA}
 test_blend_LDFLAGS = ${EXAMPLE_LF}
+test_fragment_shader_CFLAGS = ${EXAMPLE_CF}
+test_fragment_shader_LDADD = ${EXAMPLE_LA}
+test_fragment_shader_LDFLAGS = ${EXAMPLE_LF}
 all: all-am
 
 .SUFFIXES:
@@ -505,6 +525,10 @@ test_dash$(EXEEXT): $(test_dash_OBJECTS) $(test_dash_DEPENDENCIES) $(EXTRA_test_
 	@rm -f test_dash$(EXEEXT)
 	$(AM_V_CCLD)$(test_dash_LINK) $(test_dash_OBJECTS) $(test_dash_LDADD) $(LIBS)
 
+test_fragment_shader$(EXEEXT): $(test_fragment_shader_OBJECTS) $(test_fragment_shader_DEPENDENCIES) $(EXTRA_test_fragment_shader_DEPENDENCIES) 
+	@rm -f test_fragment_shader$(EXEEXT)
+	$(AM_V_CCLD)$(test_fragment_shader_LINK) $(test_fragment_shader_OBJECTS) $(test_fragment_shader_LDADD) $(LIBS)
+
 test_image$(EXEEXT): $(test_image_OBJECTS) $(test_image_DEPENDENCIES) $(EXTRA_test_image_DEPENDENCIES) 
 	@rm -f test_image$(EXEEXT)
 	$(AM_V_CCLD)$(test_image_LINK) $(test_image_OBJECTS) $(test_image_LDADD) $(LIBS)
@@ -543,6 +567,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_blend-test_blend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_dash-test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_dash-test_dash.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_fragment_shader-test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_fragment_shader-test_fragment_shader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_fragment_shader-test_tiger_paths.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_image-test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_image-test_image.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_interpolate-test.Po@am__quote@
@@ -638,6 +665,48 @@ test_dash-test_dash.obj: test_dash.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_dash.c' object='test_dash-test_dash.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_dash_CFLAGS) $(CFLAGS) -c -o test_dash-test_dash.obj `if test -f 'test_dash.c'; then $(CYGPATH_W) 'test_dash.c'; else $(CYGPATH_W) '$(srcdir)/test_dash.c'; fi`
+
+test_fragment_shader-test.o: test.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -MT test_fragment_shader-test.o -MD -MP -MF $(DEPDIR)/test_fragment_shader-test.Tpo -c -o test_fragment_shader-test.o `test -f 'test.c' || echo '$(srcdir)/'`test.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_fragment_shader-test.Tpo $(DEPDIR)/test_fragment_shader-test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test.c' object='test_fragment_shader-test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -c -o test_fragment_shader-test.o `test -f 'test.c' || echo '$(srcdir)/'`test.c
+
+test_fragment_shader-test.obj: test.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -MT test_fragment_shader-test.obj -MD -MP -MF $(DEPDIR)/test_fragment_shader-test.Tpo -c -o test_fragment_shader-test.obj `if test -f 'test.c'; then $(CYGPATH_W) 'test.c'; else $(CYGPATH_W) '$(srcdir)/test.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_fragment_shader-test.Tpo $(DEPDIR)/test_fragment_shader-test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test.c' object='test_fragment_shader-test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -c -o test_fragment_shader-test.obj `if test -f 'test.c'; then $(CYGPATH_W) 'test.c'; else $(CYGPATH_W) '$(srcdir)/test.c'; fi`
+
+test_fragment_shader-test_fragment_shader.o: test_fragment_shader.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -MT test_fragment_shader-test_fragment_shader.o -MD -MP -MF $(DEPDIR)/test_fragment_shader-test_fragment_shader.Tpo -c -o test_fragment_shader-test_fragment_shader.o `test -f 'test_fragment_shader.c' || echo '$(srcdir)/'`test_fragment_shader.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_fragment_shader-test_fragment_shader.Tpo $(DEPDIR)/test_fragment_shader-test_fragment_shader.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_fragment_shader.c' object='test_fragment_shader-test_fragment_shader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -c -o test_fragment_shader-test_fragment_shader.o `test -f 'test_fragment_shader.c' || echo '$(srcdir)/'`test_fragment_shader.c
+
+test_fragment_shader-test_fragment_shader.obj: test_fragment_shader.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -MT test_fragment_shader-test_fragment_shader.obj -MD -MP -MF $(DEPDIR)/test_fragment_shader-test_fragment_shader.Tpo -c -o test_fragment_shader-test_fragment_shader.obj `if test -f 'test_fragment_shader.c'; then $(CYGPATH_W) 'test_fragment_shader.c'; else $(CYGPATH_W) '$(srcdir)/test_fragment_shader.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_fragment_shader-test_fragment_shader.Tpo $(DEPDIR)/test_fragment_shader-test_fragment_shader.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_fragment_shader.c' object='test_fragment_shader-test_fragment_shader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -c -o test_fragment_shader-test_fragment_shader.obj `if test -f 'test_fragment_shader.c'; then $(CYGPATH_W) 'test_fragment_shader.c'; else $(CYGPATH_W) '$(srcdir)/test_fragment_shader.c'; fi`
+
+test_fragment_shader-test_tiger_paths.o: test_tiger_paths.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -MT test_fragment_shader-test_tiger_paths.o -MD -MP -MF $(DEPDIR)/test_fragment_shader-test_tiger_paths.Tpo -c -o test_fragment_shader-test_tiger_paths.o `test -f 'test_tiger_paths.c' || echo '$(srcdir)/'`test_tiger_paths.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_fragment_shader-test_tiger_paths.Tpo $(DEPDIR)/test_fragment_shader-test_tiger_paths.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_tiger_paths.c' object='test_fragment_shader-test_tiger_paths.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -c -o test_fragment_shader-test_tiger_paths.o `test -f 'test_tiger_paths.c' || echo '$(srcdir)/'`test_tiger_paths.c
+
+test_fragment_shader-test_tiger_paths.obj: test_tiger_paths.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -MT test_fragment_shader-test_tiger_paths.obj -MD -MP -MF $(DEPDIR)/test_fragment_shader-test_tiger_paths.Tpo -c -o test_fragment_shader-test_tiger_paths.obj `if test -f 'test_tiger_paths.c'; then $(CYGPATH_W) 'test_tiger_paths.c'; else $(CYGPATH_W) '$(srcdir)/test_tiger_paths.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_fragment_shader-test_tiger_paths.Tpo $(DEPDIR)/test_fragment_shader-test_tiger_paths.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_tiger_paths.c' object='test_fragment_shader-test_tiger_paths.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_fragment_shader_CFLAGS) $(CFLAGS) -c -o test_fragment_shader-test_tiger_paths.obj `if test -f 'test_tiger_paths.c'; then $(CYGPATH_W) 'test_tiger_paths.c'; else $(CYGPATH_W) '$(srcdir)/test_tiger_paths.c'; fi`
 
 test_image-test.o: test.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_image_CFLAGS) $(CFLAGS) -MT test_image-test.o -MD -MP -MF $(DEPDIR)/test_image-test.Tpo -c -o test_image-test.o `test -f 'test.c' || echo '$(srcdir)/'`test.c

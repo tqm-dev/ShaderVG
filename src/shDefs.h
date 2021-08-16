@@ -181,5 +181,9 @@ SHfloat getMaxFloat();
    }\
  }
 
+// GL_TEXTURE0 :imageSampler
+// GL_TEXTURE1 :rampSampler or  patternSampler
+// GL_TEXTURE2 :User defined 
+#define SH_TEXTURE_USER_TOP GL_TEXTURE2
 
 #endif /* __SHDEFS_H */

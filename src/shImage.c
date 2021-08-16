@@ -1214,3 +1214,12 @@ VG_API_CALL void vgLookupSingle(VGImage dst, VGImage src,
                                 VGboolean outputPremultiplied)
 {
 }
+
+VG_API_CALL void vgBindImageSH(VGImage image, VGImageUnitSH unit){
+  VG_GETCONTEXT(VG_NO_RETVAL);
+
+  SHImage *i = (SHImage*)image;
+  glActiveTexture(VG_IMAGE_UNIT_OFFSET_SH + unit);
+  glBindTexture(GL_TEXTURE_2D, i->texture);
+}
+
