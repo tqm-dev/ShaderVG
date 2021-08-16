@@ -37,142 +37,160 @@ Move to examples directory, execute tests:
 $ cd examples
 $ ./test_tiger
 ```
-- test_vgu
+#### test_vgu
   Constructs some path primitives using the VGU API.
 
-- test_tiger
+#### test_tiger
   The most simple performance test. It draws the well known svg
   tiger using just simple stroke and fill of solid colors. It
   consists of 240 paths.
 
-- test_dash
+#### test_dash
   Shows different stroke dashing modes.
 
-- test_linear
+#### test_linear
   A rectangle drawn using 3-color linear gradient fill paint
 
-- test_radial
+#### test_radial
   A rectangle drawn using 3-color radial gradient fill paint
 
-- test_interpolate
+#### test_interpolate
   Interpolates between two paths - an apple and a pear.
 
-- test_image
+#### test_image
   Images are drawn using VG_DRAW_IMAGE_MULTIPLY image mode to be
   multiplied with radial gradient fill paint.
 
-- test_pattern
+#### test_pattern
   An image is drawn in multiply mode with an image pattern fill
   paint.
 
 ## Implementation status
 
-- General:
-vgGetError ............................ FULLY implemented
-vgFlush ............................... FULLY implemented
-vgFinish .............................. FULLY implemented
+#### General                                                        
+API                     | status                                    
+----------------------- | ---------------------                     
+vgGetError              | FULLY implemented                         
+vgFlush                 | FULLY implemented                         
+vgFinish                | FULLY implemented                         
+                                                                    
+#### Getters and setters                                            
+API                     | status                                    
+----------------------- | ---------------------                     
+vgSet                   | FULLY implemented                         
+vgSeti                  | FULLY implemented                         
+vgSetfv                 | FULLY implemented                         
+vgSetiv                 | FULLY implemented                         
+vgGetf                  | FULLY implemented                         
+vgGeti                  | FULLY implemented                         
+vgGetVectorSize         | FULLY implemented                         
+vgGetfv                 | FULLY implemented                         
+vgGetiv                 | FULLY implemented                         
+vgSetParameterf         | FULLY implemented                         
+vgSetParameteri         | FULLY implemented                         
+vgSetParameterfv        | FULLY implemented                         
+vgSetParameteriv        | FULLY implemented                         
+vgGetParameterf         | FULLY implemented                         
+vgGetParameteri         | FULLY implemented                         
+vgGetParameterVectorSize| FULLY implemented                         
+vgGetParameterfv        | FULLY implemented                         
+vgGetParameteriv        | FULLY implemented                         
+                                                                    
+#### Matrix Manipulation                                            
+API                     | status                                    
+----------------------- | ---------------------                     
+vgLoadIdentity          | FULLY implemented                         
+vgLoadMatrix            | FULLY implemented                         
+vgGetMatrix             | FULLY implemented                         
+vgMultMatrix            | FULLY implemented                         
+vgTranslate             | FULLY implemented                         
+vgScale                 | FULLY implemented                         
+vgShear                 | FULLY implemented                         
+vgRotate                | FULLY implemented                         
+                                                                    
+#### Masking and Clearing                                       
+API                     | status                                
+----------------------- | ---------------------                 
+vgMask                  | NOT implemented                       
+vgClear                 | FULLY implemented                     
+                                                                
+#### Paths                                                      
+API                     | status                                
+----------------------- | ---------------------                 
+vgCreatePath            | FULLY implemented                     
+vgClearPath             | FULLY implemented                     
+vgDestroyPath           | FULLY implemented                     
+vgRemovePathCapabilities| FULLY implemented                     
+vgGetPathCapabilities   | FULLY implemented                     
+vgAppendPath            | FULLY implemented                     
+vgAppendPathData        | FULLY implemented                     
+vgModifyPathCoords      | FULLY implemented                     
+vgTransformPath         | FULLY implemented                     
+vgInterpolatePath       | FULLY implemented                     
+vgPathLength            | NOT implemented                       
+vgPointAlongPath        | NOT implemented                       
+vgPathBounds            | FULLY implemented                     
+vgPathTransformedBounds | FULLY implemented                     
+vgDrawPath              | PARTIALLY implemented                 
+                                                                
+#### Paint                                                      
+API                     | status                                
+----------------------- | ---------------------                 
+vgCreatePaint           | FULLY implemented                     
+vgDestroyPaint          | FULLY implemented                     
+vgSetPaint              | FULLY implemented                     
+vgGetPaint              | FULLY implemented                     
+vgSetColor              | FULLY implemented                     
+vgGetColor              | FULLY implemented                     
+vgPaintPattern          | FULLY implemented             
 
-- Getters and setters:
-vgSet ................................. FULLY implemented
-vgSeti ................................ FULLY implemented
-vgSetfv ............................... FULLY implemented
-vgSetiv ............................... FULLY implemented
-vgGetf ................................ FULLY implemented
-vgGeti ................................ FULLY implemented
-vgGetVectorSize ....................... FULLY implemented
-vgGetfv ............................... FULLY implemented
-vgGetiv ............................... FULLY implemented
-vgSetParameterf ....................... FULLY implemented
-vgSetParameteri ....................... FULLY implemented
-vgSetParameterfv ...................... FULLY implemented
-vgSetParameteriv ...................... FULLY implemented
-vgGetParameterf ....................... FULLY implemented
-vgGetParameteri ....................... FULLY implemented
-vgGetParameterVectorSize............... FULLY implemented
-vgGetParameterfv ...................... FULLY implemented
-vgGetParameteriv ...................... FULLY implemented
-
-- Matrix Manipulation:
-vgLoadIdentity ........................ FULLY implemented
-vgLoadMatrix .......................... FULLY implemented
-vgGetMatrix ........................... FULLY implemented
-vgMultMatrix .......................... FULLY implemented
-vgTranslate ........................... FULLY implemented
-vgScale ............................... FULLY implemented
-vgShear ............................... FULLY implemented
-vgRotate .............................. FULLY implemented
-
-- Masking and Clearing:
-vgMask ................................ NOT implemented
-vgClear ............................... FULLY implemented
-
-- Paths:
-vgCreatePath .......................... FULLY implemented
-vgClearPath ........................... FULLY implemented
-vgDestroyPath ......................... FULLY implemented
-vgRemovePathCapabilities .............. FULLY implemented
-vgGetPathCapabilities ................. FULLY implemented
-vgAppendPath .......................... FULLY implemented
-vgAppendPathData ...................... FULLY implemented
-vgModifyPathCoords .................... FULLY implemented
-vgTransformPath ....................... FULLY implemented
-vgInterpolatePath ..................... FULLY implemented
-vgPathLength .......................... NOT implemented
-vgPointAlongPath ...................... NOT implemented
-vgPathBounds .......................... FULLY implemented
-vgPathTransformedBounds ............... FULLY implemented
-vgDrawPath ............................ PARTIALLY implemented
-
-- Paint:
-vgCreatePaint ......................... FULLY implemented
-vgDestroyPaint ........................ FULLY implemented
-vgSetPaint ............................ FULLY implemented
-vgGetPaint ............................ FULLY implemented
-vgSetColor ............................ FULLY implemented
-vgGetColor ............................ FULLY implemented
-vgPaintPattern ........................ FULLY implemented
-
-- Images:
-vgCreateImage ......................... PARTIALLY implemented
-vgDestroyImage ........................ FULLY implemented
-vgClearImage .......................... FULLY implemented
-vgImageSubData ........................ PARTIALLY implemented
-vgGetImageSubData ..................... PARTIALLY implemented
-vgChildImage .......................... NOT implemented
-vgGetParent ........................... NOT implemented
-vgCopyImage ........................... FULLY implemented
-vgDrawImage ........................... PARTIALLY implemented
-vgSetPixels ........................... FULLY implemented
-vgWritePixels ......................... FULLY implemented
-vgGetPixels ........................... FULLY implemented
-vgReadPixels .......................... FULLY implemented
-vgCopyPixels .......................... FULLY implemented
-
-- Image Filters:
-vgColorMatrix ......................... NOT implemented
-vgConvolve ............................ NOT implemented
-vgSeparableConvolve ................... NOT implemented
-vgGaussianBlur ........................ NOT implemented
-vgLookup .............................. NOT implemented
-vgLookupSingle ........................ NOT implemented
-
-- Hardware Queries:
-vgHardwareQuery ....................... NOT implemented
-
-- Renderer and Extension Information:
-vgGetString ........................... FULLY implemented
-
-- VGU
-vguLine ............................... FULLY implemented
-vguPolygon ............................ FULLY implemented
-vguRect ............................... FULLY implemented
-vguRoundRect .......................... FULLY implemented
-vguEllipse ............................ FULLY implemented
-vguArc ................................ FULLY implemented
-vguComputeWarpQuadToSquare ............ NOT implemented
-vguComputeWarpSquareToQuad ............ NOT implemented
-vguComputeWarpQuadToQuad .............. NOT implemented
-
+#### Images                                        
+API                     | status                   
+----------------------- | ---------------------    
+vgCreateImage           | PARTIALLY implemented    
+vgDestroyImage          | FULLY implemented        
+vgClearImage            | FULLY implemented        
+vgImageSubData          | PARTIALLY implemented    
+vgGetImageSubData       | PARTIALLY implemented    
+vgChildImage            | NOT implemented          
+vgGetParent             | NOT implemented          
+vgCopyImage             | FULLY implemented        
+vgDrawImage             | PARTIALLY implemented    
+vgSetPixels             | NOT implemented yet      
+vgWritePixels           | NOT implemented yet      
+vgGetPixels             | FULLY implemented        
+vgReadPixels            | FULLY implemented        
+vgCopyPixels            | NOT implemented yet      
+                                                   
+#### Image Filters                                 
+API                     | status                   
+----------------------- | ---------------------    
+vgColorMatrix           | NOT implemented          
+vgConvolve              | NOT implemented          
+vgSeparableConvolve     | NOT implemented          
+vgGaussianBlur          | NOT implemented          
+vgLookup                | NOT implemented          
+vgLookupSingle          | NOT implemented          
+                                                   
+#### Queries                                       
+API                     | status                   
+----------------------- | ---------------------    
+vgHardwareQuery         | NOT implemented          
+vgGetString             | FULLY implemented        
+                                                   
+#### VGU                                          
+API                        | status               
+-----------------------    | ---------------------
+vguLine                    | FULLY implemented    
+vguPolygon                 | FULLY implemented    
+vguRect                    | FULLY implemented    
+vguRoundRect               | FULLY implemented    
+vguEllipse                 | FULLY implemented    
+vguArc                     | FULLY implemented    
+vguComputeWarpQuadToSquare | NOT implemented      
+vguComputeWarpSquareToQuad | NOT implemented      
+vguComputeWarpQuadToQuad   | NOT implemented      
+        
 ## Extensions
 
 ### Manipulate the OpenVG context as a temporary replacement for EGL:
