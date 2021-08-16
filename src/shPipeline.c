@@ -311,7 +311,7 @@ VG_API_CALL void vgDrawPath(VGPath path, VGbitfield paintModes)
   /* Apply transformation */
   shMatrixToGL(&context->pathTransform, mgl);
   glUseProgram(context->progDraw);
-  glUniformMatrix4fv(context->locationDraw.modelView, 1, GL_FALSE, mgl);
+  glUniformMatrix4fv(context->locationDraw.model, 1, GL_FALSE, mgl);
   glUniform1i(context->locationDraw.drawMode, 0); /* drawMode: path */
   GL_CEHCK_ERROR;
   
@@ -426,7 +426,7 @@ VG_API_CALL void vgDrawImage(VGImage image)
   i = (SHImage*)image;
   shMatrixToGL(&context->imageTransform, mgl);
   glUseProgram(context->progDraw);
-  glUniformMatrix4fv(context->locationDraw.modelView, 1, GL_FALSE, mgl);
+  glUniformMatrix4fv(context->locationDraw.model, 1, GL_FALSE, mgl);
   glUniform1i(context->locationDraw.drawMode, 1); /* drawMode: image */
   GL_CEHCK_ERROR;
   

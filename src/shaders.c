@@ -31,7 +31,8 @@ static const char* vgShaderVertexPipeline = R"glsl(
 /*** Input *******************/
     in vec2 pos;
     in vec2 textureUV;
-    uniform mat4 modelView;
+    uniform mat4 model;
+    uniform mat4 view;
     uniform mat4 projection;
     uniform mat3 paintInverted;
 
@@ -45,12 +46,21 @@ static const char* vgShaderVertexPipeline = R"glsl(
     void main() {
 
         /* Stage 3: Transformation */
-        gl_Position = projection * modelView * vec4(pos, 0, 1);
-        texImageCoord = textureUV;
-        paintCoord = (paintInverted * vec3(pos, 1)).xy;
-        vg_FragPos = (modelView * vec4(pos, 0, 1)).xyz;
-        vec3 normalPos = (modelView * vec4(pos, 1, 1)).xyz; // TODO:Need to be uploaded from cpu
+        gl_Position = projection * view * model * vec4(pos, 0, 1);
+
+        /* Built-in 3D pos in world space */
+        vg_FragPos = (model * vec4(pos, 0, 1)).xyz;
+
+        /* Built-in 3D normal pos in world space */
+        vec3 normalPos = (model * vec4(pos, 1, 1)).xyz; // TODO:Need to be uploaded from cpu
         vg_Noramal = normalize(normalPos - vg_FragPos);
+
+        /* 2D pos in texture space */
+        texImageCoord = textureUV;
+
+        /* 2D pos in paint space (Back to paint space) */
+        paintCoord = (paintInverted * vec3(pos, 1)).xy;
+
     }
 )glsl";
 
@@ -267,7 +277,8 @@ void shInitPiplelineShaders(void) {
 
   context->locationDraw.pos            = glGetAttribLocation(context->progDraw,  "pos");
   context->locationDraw.textureUV      = glGetAttribLocation(context->progDraw,  "textureUV");
-  context->locationDraw.modelView      = glGetUniformLocation(context->progDraw, "modelView");
+  context->locationDraw.model          = glGetUniformLocation(context->progDraw, "model");
+  context->locationDraw.view           = glGetUniformLocation(context->progDraw, "view");
   context->locationDraw.projection     = glGetUniformLocation(context->progDraw, "projection");
   context->locationDraw.paintInverted  = glGetUniformLocation(context->progDraw, "paintInverted");
   context->locationDraw.drawMode       = glGetUniformLocation(context->progDraw, "drawMode");
