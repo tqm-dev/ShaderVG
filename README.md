@@ -37,31 +37,31 @@ Move to examples directory, execute tests:
 $ cd examples
 $ ./test_tiger
 ```
-- test_vgu
+#### test_vgu
   Constructs some path primitives using the VGU API.
 
-- test_tiger
+#### test_tiger
   The most simple performance test. It draws the well known svg
   tiger using just simple stroke and fill of solid colors. It
   consists of 240 paths.
 
-- test_dash
+#### test_dash
   Shows different stroke dashing modes.
 
-- test_linear
+#### test_linear
   A rectangle drawn using 3-color linear gradient fill paint
 
-- test_radial
+#### test_radial
   A rectangle drawn using 3-color radial gradient fill paint
 
-- test_interpolate
+#### test_interpolate
   Interpolates between two paths - an apple and a pear.
 
-- test_image
+#### test_image
   Images are drawn using VG_DRAW_IMAGE_MULTIPLY image mode to be
   multiplied with radial gradient fill paint.
 
-- test_pattern
+#### test_pattern
   An image is drawn in multiply mode with an image pattern fill
   paint.
 
