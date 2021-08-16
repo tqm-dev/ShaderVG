@@ -1,123 +1,78 @@
-ShivaVG
-=============================
+# ShivaVG-2
 
-See AUTHORS for the list of contributors
+_**Note:** This project is based on https://github.com/ileben/ShivaVG that is no longer actively maintained._
 
-ShivaVG is an open-source LGPL ANSI C implementation of the Khronos
-Group OpenVG specification.
+## Main Features
 
-I.    BUILD
-II.   TESTING
-III.  IMPLEMENTATION STATUS
-IV.   EXTENSIONS
+- Working on Shader-Based OpenGL sush as OpenGL 3 and OpenGL 4
+- API extensions for GLSL shader integrated to vector/image rendering 
 
+## Getting Started
 
-I. BUILD
-=============================
+### Prerequisites
 
- * Prerequisites:
+- OpenGL development libraries and headers should be installed.
+- freeglut must be installed for rendering on window system.  
+- jpeglib needs to be installed for example programs that use images.
 
-   OpenGL development libraries and headers should be installed.
-   Othe than that, since it's ANSI C should compile with any modern
-   C compiler. jpeglib needs to be installed for example programs
-   that use images.
+### Compiling
 
- * Compiling under UNIX systems:
+Clone and enter the repository:
+```
+$ git clone https://github.com/tqm-dev/ShivaVG-2
+$ cd ShivaVG-2
+```
 
-   Read the INSTALL file for more detailed (though generic) directions.
-   This library uses the standard ./configure ; make. The example
-   programs are automatically compiled. However, compilation of each
-   example program can be toggled by ./configure --with-example-xxx
-   command where xxx denotes the name of the example. Run ./configure
-   --help for a list of such options.
+Under UNIX systems, execute configure and make:
+```
+$ sh autogen.sh
+$ ./configure LIBS="-lGL -lGLU -lglut -ljpeg"
+$ make
+```
 
- * Compiling on Mac:
+### Testing
 
-   No XCode project files provided yet. The easiest way is by just
-   using gcc, in which case look under UNIX compiling section.
-
- * Compiling natively on Windows platform:
-
-   Solution files are provided for Visual C++ version 7 and 8. For
-   the example programs using images to compile, you will need the
-   appropriate build of jpeglib to match your Visual C++ version.
-
- * Compiling in mingw / cygwin environment:
-
-   Might work just as fine as any UNIX-flavored system, but hasn't
-   been tested yet.
-
-
-II. TESTING
-=============================
-
-There is no real testing suite yet. The example programs are there
-just to play with what the implementation can currently do, but
-can hardly provide any proper validation, since no reference images
-are provided. Here is a description of each example program and
-what features it highlights:
-
-* test_vgu
-
+Move to examples directory, execute tests:
+```
+$ cd examples
+$ ./test_tiger
+```
+- test_vgu
   Constructs some path primitives using the VGU API.
 
-* test_tiger
-
+- test_tiger
   The most simple performance test. It draws the well known svg
   tiger using just simple stroke and fill of solid colors. It
   consists of 240 paths.
 
-* test_dash
-
+- test_dash
   Shows different stroke dashing modes.
 
-* test_linear
-
+- test_linear
   A rectangle drawn using 3-color linear gradient fill paint
 
-* test_radial
-
+- test_radial
   A rectangle drawn using 3-color radial gradient fill paint
 
-* test_interpolate
-
+- test_interpolate
   Interpolates between two paths - an apple and a pear.
 
-* test_image
-
-	Images are drawn using VG_DRAW_IMAGE_MULTIPLY image mode to be
+- test_image
+  Images are drawn using VG_DRAW_IMAGE_MULTIPLY image mode to be
   multiplied with radial gradient fill paint.
 
-* test_pattern
-
+- test_pattern
   An image is drawn in multiply mode with an image pattern fill
   paint.
 
+## Implementation status
 
-III. IMPLEMENTATION STATUS
-=============================
-
-Khronos states in the OpenVG specification, that the contexts for all
-their client APIs are expected to be created via the EGL API. Since
-EGL to use with ShivaVG has not been implemented yet, there is a set
-of extension functions provided for the task of creating, maintaining
-and destroying the OpenVG context. (See next section EXTENSIONS for
-details.)
-
-What follows is a description of which functions or to what extent
-a certain function has been implemented. When a function is marked
-as PARTIALLY implemented, the TODO file or the comments in the code
-itself would provide further clues.
-
-
-* General:
-
+- General:
 vgGetError ............................ FULLY implemented
 vgFlush ............................... FULLY implemented
 vgFinish .............................. FULLY implemented
 
-* Getters and setters:
-
+- Getters and setters:
 vgSet ................................. FULLY implemented
 vgSeti ................................ FULLY implemented
 vgSetfv ............................... FULLY implemented
@@ -137,8 +92,7 @@ vgGetParameterVectorSize............... FULLY implemented
 vgGetParameterfv ...................... FULLY implemented
 vgGetParameteriv ...................... FULLY implemented
 
-* Matrix Manipulation:
-
+- Matrix Manipulation:
 vgLoadIdentity ........................ FULLY implemented
 vgLoadMatrix .......................... FULLY implemented
 vgGetMatrix ........................... FULLY implemented
@@ -148,13 +102,11 @@ vgScale ............................... FULLY implemented
 vgShear ............................... FULLY implemented
 vgRotate .............................. FULLY implemented
 
-* Masking and Clearing:
-
+- Masking and Clearing:
 vgMask ................................ NOT implemented
 vgClear ............................... FULLY implemented
 
-* Paths:
-
+- Paths:
 vgCreatePath .......................... FULLY implemented
 vgClearPath ........................... FULLY implemented
 vgDestroyPath ......................... FULLY implemented
@@ -171,8 +123,7 @@ vgPathBounds .......................... FULLY implemented
 vgPathTransformedBounds ............... FULLY implemented
 vgDrawPath ............................ PARTIALLY implemented
 
-* Paint:
-
+- Paint:
 vgCreatePaint ......................... FULLY implemented
 vgDestroyPaint ........................ FULLY implemented
 vgSetPaint ............................ FULLY implemented
@@ -181,8 +132,7 @@ vgSetColor ............................ FULLY implemented
 vgGetColor ............................ FULLY implemented
 vgPaintPattern ........................ FULLY implemented
 
-* Images:
-
+- Images:
 vgCreateImage ......................... PARTIALLY implemented
 vgDestroyImage ........................ FULLY implemented
 vgClearImage .......................... FULLY implemented
@@ -198,8 +148,7 @@ vgGetPixels ........................... FULLY implemented
 vgReadPixels .......................... FULLY implemented
 vgCopyPixels .......................... FULLY implemented
 
-* Image Filters:
-
+- Image Filters:
 vgColorMatrix ......................... NOT implemented
 vgConvolve ............................ NOT implemented
 vgSeparableConvolve ................... NOT implemented
@@ -207,16 +156,13 @@ vgGaussianBlur ........................ NOT implemented
 vgLookup .............................. NOT implemented
 vgLookupSingle ........................ NOT implemented
 
-* Hardware Queries:
-
+- Hardware Queries:
 vgHardwareQuery ....................... NOT implemented
 
-* Renderer and Extension Information:
-
+- Renderer and Extension Information:
 vgGetString ........................... FULLY implemented
 
-* VGU
-
+- VGU
 vguLine ............................... FULLY implemented
 vguPolygon ............................ FULLY implemented
 vguRect ............................... FULLY implemented
@@ -227,14 +173,11 @@ vguComputeWarpQuadToSquare ............ NOT implemented
 vguComputeWarpSquareToQuad ............ NOT implemented
 vguComputeWarpQuadToQuad .............. NOT implemented
 
+## Extensions
 
-IV. EXTENSIONS
-=============================
+### Manipulate the OpenVG context as a temporary replacement for EGL:
 
-There are three extensions to the API that manipulate the OpenVG
-context as a temporary replacement for EGL:
-
-VGboolean vgCreateContextSH(VGint width, VGint height)
+- VGboolean vgCreateContextSH(VGint width, VGint height)
 
   Creates an OpenVG context on top of an existing OpenGL context
   that should have been manually initialized by the user of the
@@ -242,11 +185,15 @@ VGboolean vgCreateContextSH(VGint width, VGint height)
   surface. No multi-threading support has been implemented yet.
   The context is created once per process.
 
-void vgResizeSurfaceSH(VGint width, VGint height)
+- void vgResizeSurfaceSH(VGint width, VGint height)
 
   Should be called whenever the size of the surface changes (e.g.
   the owner window of the OpenGL context is resized).
 
-void vgDestroyContextSH()
+- void vgDestroyContextSH()
 
   Destroys the OpenVG context associated with the calling process.
+
+## License
+
+This project is licensed under the GNU Lesser General Public License v2.1 - see the [LICENSE](https://github.com/tqm-dev/ShivaVG-2/blob/master/COPYING) file for details
