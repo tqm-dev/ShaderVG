@@ -38,6 +38,8 @@ static const char* vgShaderVertexPipeline = R"glsl(
 /*** Output ******************/
     out vec2 texImageCoord;
     out vec2 paintCoord;
+    out vec3 vg_FragPos;
+    out vec3 vg_Noramal;
 
 /*** Main thread  **************************************************/
     void main() {
@@ -46,7 +48,9 @@ static const char* vgShaderVertexPipeline = R"glsl(
         gl_Position = projection * modelView * vec4(pos, 0, 1);
         texImageCoord = textureUV;
         paintCoord = (paintInverted * vec3(pos, 1)).xy;
-
+        vg_FragPos = (modelView * vec4(pos, 0, 1)).xyz;
+        vec3 normalPos = (modelView * vec4(pos, 1, 1)).xyz; // TODO:Need to be uploaded from cpu
+        vg_Noramal = normalize(normalPos - vg_FragPos);
     }
 )glsl";
 
@@ -71,6 +75,8 @@ static const char* vgShaderFragmentPipeline = R"glsl(
 
     in vec2 texImageCoord;
     in vec2 paintCoord;
+    in vec3 vg_FragPos;
+    in vec3 vg_Noramal;
 
 /*** Input ********************************************/
 

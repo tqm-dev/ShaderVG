@@ -169,8 +169,15 @@ void cleanup()
 }
 
 const char* vgShaderFragmentUserTest = R"glsl(
+
+    vec3 lightPos = vec3(0, 0, 120); // 3D space on surface
+    vec3 lightColor = vec3(83.0/255.0, 91.0/255.0, 255.0/255.0); // Blue light
+
     void vgMain(vec4 color){
-        vg_FragColor = color * vec4(1.0, 0.0, 1.0, 1.0);
+        vec3 lightDir = normalize(lightPos - vg_FragPos);
+        float diff = max(dot(vg_Noramal, lightDir), 0.0);
+        vec3 diffuse = diff * lightColor;
+        vg_FragColor = vec4(diffuse, 1.0) * color;
     }
 )glsl";
 
