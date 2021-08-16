@@ -67,12 +67,12 @@ $ ./test_tiger
 
 ## Implementation status
 
-- General:
+- General
 vgGetError ............................ FULLY implemented
 vgFlush ............................... FULLY implemented
 vgFinish .............................. FULLY implemented
 
-- Getters and setters:
+- Getters and setters
 vgSet ................................. FULLY implemented
 vgSeti ................................ FULLY implemented
 vgSetfv ............................... FULLY implemented
@@ -92,7 +92,7 @@ vgGetParameterVectorSize............... FULLY implemented
 vgGetParameterfv ...................... FULLY implemented
 vgGetParameteriv ...................... FULLY implemented
 
-- Matrix Manipulation:
+- Matrix Manipulation
 vgLoadIdentity ........................ FULLY implemented
 vgLoadMatrix .......................... FULLY implemented
 vgGetMatrix ........................... FULLY implemented
@@ -102,11 +102,11 @@ vgScale ............................... FULLY implemented
 vgShear ............................... FULLY implemented
 vgRotate .............................. FULLY implemented
 
-- Masking and Clearing:
+- Masking and Clearing
 vgMask ................................ NOT implemented
 vgClear ............................... FULLY implemented
 
-- Paths:
+- Paths
 vgCreatePath .......................... FULLY implemented
 vgClearPath ........................... FULLY implemented
 vgDestroyPath ......................... FULLY implemented
@@ -123,7 +123,7 @@ vgPathBounds .......................... FULLY implemented
 vgPathTransformedBounds ............... FULLY implemented
 vgDrawPath ............................ PARTIALLY implemented
 
-- Paint:
+- Paint
 vgCreatePaint ......................... FULLY implemented
 vgDestroyPaint ........................ FULLY implemented
 vgSetPaint ............................ FULLY implemented
@@ -132,7 +132,7 @@ vgSetColor ............................ FULLY implemented
 vgGetColor ............................ FULLY implemented
 vgPaintPattern ........................ FULLY implemented
 
-- Images:
+- Images
 vgCreateImage ......................... PARTIALLY implemented
 vgDestroyImage ........................ FULLY implemented
 vgClearImage .......................... FULLY implemented
@@ -148,7 +148,7 @@ vgGetPixels ........................... FULLY implemented
 vgReadPixels .......................... FULLY implemented
 vgCopyPixels .......................... FULLY implemented
 
-- Image Filters:
+- Image Filters
 vgColorMatrix ......................... NOT implemented
 vgConvolve ............................ NOT implemented
 vgSeparableConvolve ................... NOT implemented
@@ -156,10 +156,10 @@ vgGaussianBlur ........................ NOT implemented
 vgLookup .............................. NOT implemented
 vgLookupSingle ........................ NOT implemented
 
-- Hardware Queries:
+- Hardware Queries
 vgHardwareQuery ....................... NOT implemented
 
-- Renderer and Extension Information:
+- Renderer and Extension Information
 vgGetString ........................... FULLY implemented
 
 - VGU
