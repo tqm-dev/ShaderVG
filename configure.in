@@ -90,7 +90,6 @@ case "${host}" in
 	GL_DIR="OpenGL"
 	GLUT_DIR="GLUT"
 	GL_LIB="-framework OpenGL"
-	GLU_LIB=""
 	GLUT_LIB="-framework GLUT"
 	CONFIG_CFLAGS=""
 	CONFIG_LDFLAGS="-framework OpenGL -framework GLUT"
@@ -99,20 +98,18 @@ case "${host}" in
 	GL_DIR="GL"
 	GLUT_DIR="GL"
 	GL_LIB="-lGL"
-	GLU_LIB="-lGLU"
 	GLUT_FLAGS="-lglut"
 	CONFIG_CFLAGS=""
 	CONFIG_LDFLAGS=""
-	CONFIG_LDADD="-lglut -lGL -lGLU" ;;
+	CONFIG_LDADD="-lglut -lGL" ;;
 *)
 	GL_DIR="GL"
 	GLUT_DIR="GL"
 	GL_LIB="-lGL"
-	GLU_LIB="-lGLU"
 	GLUT_LIB="-lglut"
 	CONFIG_CFLAGS=""
 	CONFIG_LDFLAGS=""
-	CONFIG_LDADD="-lglut -lGL -lGLU" ;;
+	CONFIG_LDADD="-lglut -lGL" ;;
 	
 esac
 
@@ -160,15 +157,6 @@ case "${host}" in
 		[GL], glXGetProcAddress,
 		[has_glx="yes"], [has_glx="no"]) ;;
 esac
-
-LDFLAGS="$LDFLAGS $GLU_LIB"
-
-echo -n "checking for GLU library... "
-AC_LINK_IFELSE([
-	char gluOrtho2D();
-	int main(void) {gluOrtho2D(); return 0;}],
-	[has_glu="yes"] && [echo "yes"],
-	[has_glu="no"] && [echo "no"])
 
 LDFLAGS="$LDFLAGS $GLUT_LIB"
 
@@ -233,19 +221,9 @@ NO_GL_H_MSG="
 	gl.h header missing! ShivaVG cannot be built without
 	OpenGL headers.
 "
-NO_GLU_H_MSG="
-
-	glu.h header missing! ShivaVG cannot be built without
-	OpenGL headers.
-"
 NO_GL_MSG="
 
 	Failed linking with GL library! ShivaVG cannot be built
-	without OpenGL library.
-"
-NO_GLU_MSG="
-
-	Failed linking with GLU library! ShivaVG cannot be built
 	without OpenGL library.
 "
 NO_GLX_H_MSG="
@@ -263,16 +241,8 @@ if test "x$has_gl_h" = "xno"; then
 	AC_MSG_FAILURE([$NO_GL_H_MSG])
 fi
 
-if test "x$has_glu_h" = "xno"; then
-	AC_MSG_FAILURE([$NO_GLU_H_MSG])
-fi
-
 if test "x$has_gl" = "xno"; then
 	AC_MSG_FAILURE([$NO_GL_MSG])
-fi
-
-if test "x$has_glu" = "xno"; then
-	AC_MSG_FAILURE([$NO_GLU_MSG])
 fi
 
 case "${host}" in
@@ -310,13 +280,11 @@ examples/Makefile
 # =============================================
 
 #echo "GL headers present      $has_gl_h"
-#echo "GLU headers present     $has_glu_h"
 #echo "GLX headers present     $has_glx_h"
 #echo "GLUT headers present    $has_glut_h"
 #echo "JPEG headers present    $has_jpeg_h"
 #echo ""
 #echo "GL library present      $has_gl"
-#echo "GLU library present     $has_glu"
 #echo "GLX library present     $has_glx"
 #echo "GLUT library present    $has_glut"
 #echo "JPEG library present    $has_jpeg"

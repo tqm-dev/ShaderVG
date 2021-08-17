@@ -160,10 +160,8 @@ SHfloat getMaxFloat();
 
 #if defined(__APPLE__)
 #  include <OpenGL/gl.h>
-#  include <OpenGL/glu.h>
 #elif defined(_WIN32)
 #  include <GL/gl.h>
-#  include <GL/glu.h>
 #else
 #  define GL_GLEXT_PROTOTYPES
 #  include <GL/glcorearb.h>
