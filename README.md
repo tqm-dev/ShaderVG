@@ -4,7 +4,7 @@ _**Note:** This project is based on https://github.com/ileben/ShivaVG that is no
 
 ## Main Features
 
-- Working on Shader-Based OpenGL sush as OpenGL 3 and OpenGL 4
+- Working on Shader-Based OpenGL
 - API extensions for GLSL shader integrated to vector/image rendering 
 
 ## Getting Started
