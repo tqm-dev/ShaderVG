@@ -51,89 +51,22 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
   /* setup GL projection */
   glViewport(0,0,width,height);
   
-  GLint  compileStatus;
-
   /* Setup shader for rendering*/
-  {
-      GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-      glShaderSource(vs, 1, &vgShaderVertexPipeline, NULL);
-      glCompileShader(vs);
-      glGetShaderiv(vs, GL_COMPILE_STATUS, &compileStatus);
-      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
-      GL_CEHCK_ERROR;
-
-      GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-      glShaderSource(fs, 1, &vgShaderFragmentPipeline, NULL);
-      glCompileShader(fs);
-      glGetShaderiv(fs, GL_COMPILE_STATUS, &compileStatus);
-      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
-      GL_CEHCK_ERROR;
-
-      g_context->progDraw = glCreateProgram();
-      glAttachShader(g_context->progDraw, vs);
-      glAttachShader(g_context->progDraw, fs);
-      glLinkProgram(g_context->progDraw);
-      glDeleteShader(vs);
-      glDeleteShader(fs);
-      GL_CEHCK_ERROR;
-
-      g_context->locationDraw.pos            = glGetAttribLocation(g_context->progDraw,  "pos");
-      g_context->locationDraw.textureUV      = glGetAttribLocation(g_context->progDraw,  "textureUV");
-      g_context->locationDraw.modelView      = glGetUniformLocation(g_context->progDraw, "modelView");
-      g_context->locationDraw.projection     = glGetUniformLocation(g_context->progDraw, "projection");
-      g_context->locationDraw.paintInverted  = glGetUniformLocation(g_context->progDraw, "paintInverted");
-      g_context->locationDraw.drawMode       = glGetUniformLocation(g_context->progDraw, "drawMode");
-      g_context->locationDraw.imageSampler   = glGetUniformLocation(g_context->progDraw, "imageSampler");
-      g_context->locationDraw.imageMode      = glGetUniformLocation(g_context->progDraw, "imageMode");
-      g_context->locationDraw.paintType      = glGetUniformLocation(g_context->progDraw, "paintType");
-      g_context->locationDraw.rampSampler    = glGetUniformLocation(g_context->progDraw, "rampSampler");
-      g_context->locationDraw.patternSampler = glGetUniformLocation(g_context->progDraw, "patternSampler");
-      g_context->locationDraw.paintParams    = glGetUniformLocation(g_context->progDraw, "paintParams");
-      g_context->locationDraw.paintColor     = glGetUniformLocation(g_context->progDraw, "paintColor");
-      g_context->locationDraw.scaleFactorBias= glGetUniformLocation(g_context->progDraw, "scaleFactorBias");
-      GL_CEHCK_ERROR;
-  }
-
+  g_context->userShaderFragment = NULL;
+  shInitPiplelineShaders();
+ 
   /* Setup shaders for making color ramp */
-  {
-      GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-      glShaderSource(vs, 1, &vgShaderVertexColorRamp, NULL);
-      glCompileShader(vs);
-      glGetShaderiv(vs, GL_COMPILE_STATUS, &compileStatus);
-      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
-      GL_CEHCK_ERROR;
-
-      GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-      glShaderSource(fs, 1, &vgShaderFragmentColorRamp, NULL);
-      glCompileShader(fs);
-      glGetShaderiv(fs, GL_COMPILE_STATUS, &compileStatus);
-      printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
-      GL_CEHCK_ERROR;
-
-      g_context->progColorRamp = glCreateProgram();
-      glAttachShader(g_context->progColorRamp, vs);
-      glAttachShader(g_context->progColorRamp, fs);
-      glLinkProgram(g_context->progColorRamp);
-      glDeleteShader(vs);
-      glDeleteShader(fs);
-      GL_CEHCK_ERROR;
-
-      g_context->locationColorRamp.step = glGetAttribLocation(g_context->progColorRamp, "step");
-      g_context->locationColorRamp.stepColor = glGetAttribLocation(g_context->progColorRamp, "stepColor");
-      GL_CEHCK_ERROR;
-  }
+  shInitRampShaders();
 
   glUseProgram(g_context->progDraw);
 
   /* Initialize uniform variables */
   {
       float mat[16];
+      shIdMatrixGL(mat);
+      glUniformMatrix4fv(g_context->locationDraw.view, 1, GL_FALSE, mat);
       shCalcOrtho2D(mat, 0, width, 0, height);
       glUniformMatrix4fv(g_context->locationDraw.projection, 1, GL_FALSE, mat);
-      glUniform1i(g_context->locationDraw.paintType, VG_PAINT_TYPE_COLOR);
-      GLfloat factor_bias[8] = {1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0};
-      glUniform4fv(g_context->locationDraw.scaleFactorBias, 2, factor_bias);
-      glUniform1i(g_context->locationDraw.imageMode, VG_DRAW_IMAGE_NORMAL);
       GL_CEHCK_ERROR;
   }
   
@@ -153,6 +86,8 @@ VG_API_CALL void vgResizeSurfaceSH(VGint width, VGint height)
   
   /* Setup projection matrix */
   float mat[16];
+  shIdMatrixGL(mat);
+  glUniformMatrix4fv(context->locationDraw.view, 1, GL_FALSE, mat);
   shCalcOrtho2D(mat, 0, width, 0, height);
   glUseProgram(context->progDraw);
   glUniformMatrix4fv(context->locationDraw.projection, 1, GL_FALSE, mat);

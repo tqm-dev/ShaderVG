@@ -119,7 +119,8 @@ typedef struct
   struct {
       GLint pos            ;
       GLint textureUV      ;
-      GLint modelView      ;
+      GLint model          ;
+      GLint view           ;
       GLint projection     ;
       GLint paintInverted  ;
       GLint drawMode       ;
@@ -128,6 +129,7 @@ typedef struct
       GLint paintType      ;
       GLint rampSampler    ;
       GLint patternSampler ;
+      GLint userSampler    ;
       GLint paintParams    ;
       GLint paintColor     ;
       GLint scaleFactorBias;
@@ -141,6 +143,11 @@ typedef struct
   /* GL programs */
   GLuint progDraw;
   GLuint progColorRamp;
+
+  /* GL shaders */
+  const void* userShaderFragment;
+  GLint vs;
+  GLint fs;
 
 } VGContext;
 

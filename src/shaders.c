@@ -18,36 +18,53 @@
  *
  */
 
+#include "openvg.h"
+#include "shContext.h"
+#include "shDefs.h"
 #include "shaders.h"
 #include <string.h>
 #include <stdio.h>
 
-const char* vgShaderVertexPipeline = R"glsl(
+static const char* vgShaderVertexPipeline = R"glsl(
     #version 330
     
 /*** Input *******************/
     in vec2 pos;
     in vec2 textureUV;
-    uniform mat4 modelView;
+    uniform mat4 model;
+    uniform mat4 view;
     uniform mat4 projection;
     uniform mat3 paintInverted;
 
 /*** Output ******************/
     out vec2 texImageCoord;
     out vec2 paintCoord;
+    out vec3 vg_FragPos;
+    out vec3 vg_Noramal;
 
 /*** Main thread  **************************************************/
     void main() {
 
         /* Stage 3: Transformation */
-        gl_Position = projection * modelView * vec4(pos, 0, 1);
+        gl_Position = projection * view * model * vec4(pos, 0, 1);
+
+        /* Built-in 3D pos in world space */
+        vg_FragPos = (model * vec4(pos, 0, 1)).xyz;
+
+        /* Built-in 3D normal pos in world space */
+        vec3 normalPos = (model * vec4(pos, 1, 1)).xyz; 
+        vg_Noramal = normalize(normalPos - vg_FragPos);
+
+        /* 2D pos in texture space */
         texImageCoord = textureUV;
+
+        /* 2D pos in paint space (Back to paint space) */
         paintCoord = (paintInverted * vec3(pos, 1)).xy;
 
     }
 )glsl";
 
-const char* vgShaderFragmentPipeline = R"glsl(
+static const char* vgShaderFragmentPipeline = R"glsl(
 
     #version 330
 
@@ -68,6 +85,8 @@ const char* vgShaderFragmentPipeline = R"glsl(
 
     in vec2 texImageCoord;
     in vec2 paintCoord;
+    in vec3 vg_FragPos;
+    in vec3 vg_Noramal;
 
 /*** Input ********************************************/
 
@@ -86,6 +105,11 @@ const char* vgShaderFragmentPipeline = R"glsl(
     uniform sampler2D patternSampler;
     // Color transform
     uniform vec4 scaleFactorBias[2];
+
+/*** Global variables *******************************************/
+
+    // Output from user defined shader
+    vec4 vg_FragColor;
 
 /*** Output *******************************************/
 
@@ -128,6 +152,9 @@ const char* vgShaderFragmentPipeline = R"glsl(
             ( (dx * dfx + dy * dfy) + sqrt(r*r*(dx*dx + dy*dy) - pow(dx*dfy - dy*dfx, 2.0)) )
          /  ( r*r - (dfx*dfx + dfy*dfy) );
     }
+
+    // User defined shader
+    void vgMain(vec4 color);
 
 /*** Main thread  *************************************/
 
@@ -175,11 +202,21 @@ const char* vgShaderFragmentPipeline = R"glsl(
         } 
 
         /* Stage 8: Color Transformation, Blending, and Antialiasing */
-        fragColor = col * scaleFactorBias[0] + scaleFactorBias[1] ;
+        col = col * scaleFactorBias[0] + scaleFactorBias[1] ;
+
+        /* Extended Stage: User defined shader that affects vg_FragColor */
+        vgMain(col);
+
+        /* Final color */
+        fragColor = vg_FragColor;
     }
 )glsl";
 
-const char* vgShaderVertexColorRamp = R"glsl(
+static const char* vgShaderFragmentUserDefault = R"glsl(
+    void vgMain(vec4 color){ vg_FragColor = color; }
+)glsl";
+
+static const char* vgShaderVertexColorRamp = R"glsl(
     #version 330
     
     in  vec2 step;
@@ -193,7 +230,7 @@ const char* vgShaderVertexColorRamp = R"glsl(
     }
 )glsl";
 
-const char* vgShaderFragmentColorRamp = R"glsl(
+static const char* vgShaderFragmentColorRamp = R"glsl(
     #version 330
 
     in  vec4 interpolateColor;
@@ -204,4 +241,168 @@ const char* vgShaderFragmentColorRamp = R"glsl(
         fragColor = interpolateColor;
     }
 )glsl";
+
+void shInitPiplelineShaders(void) {
+
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  GLint  compileStatus;
+
+  context->vs = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(context->vs, 1, &vgShaderVertexPipeline, NULL);
+  glCompileShader(context->vs);
+  glGetShaderiv(context->vs, GL_COMPILE_STATUS, &compileStatus);
+  printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+  GL_CEHCK_ERROR;
+
+  context->fs = glCreateShader(GL_FRAGMENT_SHADER);
+  const char* extendedStage;
+  if(context->userShaderFragment){
+    extendedStage = (const char*)context->userShaderFragment;
+  } else {
+    extendedStage = vgShaderFragmentUserDefault;
+  }
+  const char* buf[2] = { vgShaderFragmentPipeline, extendedStage };
+  const GLint size[2] = { strlen(vgShaderFragmentPipeline), strlen(extendedStage) };
+  glShaderSource(context->fs, 2, buf, size);
+  glCompileShader(context->fs);
+  glGetShaderiv(context->fs, GL_COMPILE_STATUS, &compileStatus);
+  printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+  GL_CEHCK_ERROR;
+
+  context->progDraw = glCreateProgram();
+  glAttachShader(context->progDraw, context->vs);
+  glAttachShader(context->progDraw, context->fs);
+  glLinkProgram(context->progDraw);
+  GL_CEHCK_ERROR;
+
+  context->locationDraw.pos            = glGetAttribLocation(context->progDraw,  "pos");
+  context->locationDraw.textureUV      = glGetAttribLocation(context->progDraw,  "textureUV");
+  context->locationDraw.model          = glGetUniformLocation(context->progDraw, "model");
+  context->locationDraw.view           = glGetUniformLocation(context->progDraw, "view");
+  context->locationDraw.projection     = glGetUniformLocation(context->progDraw, "projection");
+  context->locationDraw.paintInverted  = glGetUniformLocation(context->progDraw, "paintInverted");
+  context->locationDraw.drawMode       = glGetUniformLocation(context->progDraw, "drawMode");
+  context->locationDraw.imageSampler   = glGetUniformLocation(context->progDraw, "imageSampler");
+  context->locationDraw.imageMode      = glGetUniformLocation(context->progDraw, "imageMode");
+  context->locationDraw.paintType      = glGetUniformLocation(context->progDraw, "paintType");
+  context->locationDraw.rampSampler    = glGetUniformLocation(context->progDraw, "rampSampler");
+  context->locationDraw.patternSampler = glGetUniformLocation(context->progDraw, "patternSampler");
+  context->locationDraw.paintParams    = glGetUniformLocation(context->progDraw, "paintParams");
+  context->locationDraw.paintColor     = glGetUniformLocation(context->progDraw, "paintColor");
+  context->locationDraw.scaleFactorBias= glGetUniformLocation(context->progDraw, "scaleFactorBias");
+
+  // TODO: Support color transform to remove this from here
+  glUseProgram(context->progDraw);
+  GLfloat factor_bias[8] = {1.0,1.0,1.0,1.0,0.0,0.0,0.0,0.0};
+  glUniform4fv(context->locationDraw.scaleFactorBias, 2, factor_bias);
+
+  GL_CEHCK_ERROR;
+}
+
+void shDeinitPiplelineShaders(void){
+
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  glDeleteShader(context->vs);
+  glDeleteShader(context->fs);
+  glDeleteProgram(context->progDraw);
+}
+
+void shInitRampShaders(void) {
+
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  GLint  compileStatus;
+
+  GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vs, 1, &vgShaderVertexColorRamp, NULL);
+  glCompileShader(vs);
+  glGetShaderiv(vs, GL_COMPILE_STATUS, &compileStatus);
+  printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+  GL_CEHCK_ERROR;
+
+  GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fs, 1, &vgShaderFragmentColorRamp, NULL);
+  glCompileShader(fs);
+  glGetShaderiv(fs, GL_COMPILE_STATUS, &compileStatus);
+  printf("Shader compile status :%d line:%d\n", compileStatus, __LINE__);
+  GL_CEHCK_ERROR;
+
+  context->progColorRamp = glCreateProgram();
+  glAttachShader(context->progColorRamp, vs);
+  glAttachShader(context->progColorRamp, fs);
+  glLinkProgram(context->progColorRamp);
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+  GL_CEHCK_ERROR;
+
+  context->locationColorRamp.step = glGetAttribLocation(context->progColorRamp, "step");
+  context->locationColorRamp.stepColor = glGetAttribLocation(context->progColorRamp, "stepColor");
+  GL_CEHCK_ERROR;
+}
+
+void shDeinitRampShaders(void){
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  glDeleteProgram(context->progColorRamp);
+}
+
+VG_API_CALL void vgSetShaderSourceSH(VGuint shadertype, const VGbyte* string){
+    VG_GETCONTEXT(VG_NO_RETVAL);
+    SH_RETURN_ERR_IF(shadertype != VG_FRAGMENT_SHADER_SH, VG_ILLEGAL_ARGUMENT_ERROR, SH_NO_RETVAL);
+    shDeinitPiplelineShaders();
+    context->userShaderFragment = (const void*)string;
+    shInitPiplelineShaders();
+}
+
+VG_API_CALL void vgUniform1fSH(VGint location, VGfloat v0){
+    glUniform1f(location, v0);                                                     
+}
+
+VG_API_CALL void vgUniform2fSH(VGint location, VGfloat v0, VGfloat v1){
+    glUniform2f(location, v0, v1);                                         
+}
+
+VG_API_CALL void vgUniform3fSH(VGint location, VGfloat v0, VGfloat v1, VGfloat v2){
+    glUniform3f(location, v0, v1, v2);                             
+}
+
+VG_API_CALL void vgUniform4fSH(VGint location, VGfloat v0, VGfloat v1, VGfloat v2, VGfloat v3){
+    glUniform4f(location, v0, v1, v2, v3);                 
+}
+
+VG_API_CALL void vgUniform1fvSH(VGint location, VGint count, const VGfloat *value){
+    glUniform1fv(location, count, value);                           
+}
+
+VG_API_CALL void vgUniform2fvSH(VGint location, VGint count, const VGfloat *value){
+    glUniform2fv(location, count, value);                           
+}
+
+VG_API_CALL void vgUniform3fvSH(VGint location, VGint count, const VGfloat *value){
+    glUniform3fv(location, count, value);                           
+}
+
+VG_API_CALL void vgUniform4fvSH(VGint location, VGint count, const VGfloat *value){
+    glUniform4fv(location, count, value);                           
+}
+
+VG_API_CALL void vgUniformMatrix2fvSH(VGint location, VGint count, VGboolean transpose, const VGfloat *value){
+    glUniformMatrix2fv(location, count, transpose, value);
+}
+
+VG_API_CALL void vgUniformMatrix3fvSH(VGint location, VGint count, VGboolean transpose, const VGfloat *value){
+    glUniformMatrix3fv(location, count, transpose, value);
+}
+
+VG_API_CALL void vgUniformMatrix4fvSH(VGint location, VGint count, VGboolean transpose, const VGfloat *value){
+    glUniformMatrix4fv(location, count, transpose, value);
+}
+
+VG_API_CALL VGint vgGetUniformLocationSH(const VGbyte *name){
+    VG_GETCONTEXT(-1);
+    return glGetUniformLocation(context->progDraw, name);
+}
+
+VG_API_CALL void vgGetUniformfvSH(VGint location, VGfloat *params){
+    VG_GETCONTEXT(VG_NO_RETVAL);
+    glGetUniformfv(context->progDraw, location, params);
+}
 

@@ -21,9 +21,10 @@
 #ifndef __SHADERS_H
 #define __SHADERS_H
 
-extern const char* vgShaderVertexPipeline;
-extern const char* vgShaderFragmentPipeline;
-extern const char* vgShaderVertexColorRamp;
-extern const char* vgShaderFragmentColorRamp;
+void shInitPiplelineShaders(void);
+void shDeinitPiplelineShaders(void);
+
+void shInitRampShaders(void);
+void shDeinitRampShaders(void);
 
 #endif /* __SHADERS_H */

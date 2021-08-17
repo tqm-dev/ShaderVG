@@ -174,3 +174,11 @@ void shMatrixToVG(SHMatrix3x3 *m, SHfloat mvg[9])
     mvg[1] = m->m[1][0]; mvg[4] = m->m[1][1]; mvg[7] = m->m[1][2];
     mvg[2] = m->m[2][0]; mvg[5] = m->m[2][1]; mvg[8] = m->m[2][2];
 }
+
+void shIdMatrixGL(SHfloat mgl[16])
+{
+    mgl[0] = 1.0f; mgl[4] = 0.0f; mgl[8]  = 0.0f; mgl[12] = 0.0f;
+    mgl[1] = 0.0f; mgl[5] = 1.0f; mgl[9]  = 0.0f; mgl[13] = 0.0f;
+    mgl[2] = 0.0f; mgl[6] = 0.0f; mgl[10] = 1.0f; mgl[14] = 0.0f;
+    mgl[3] = 0.0f; mgl[7] = 0.0f; mgl[11] = 0.0f; mgl[15] = 1.0f;
+}

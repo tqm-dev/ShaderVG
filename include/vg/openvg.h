@@ -625,6 +625,33 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height);
 VG_API_CALL void vgResizeSurfaceSH(VGint width, VGint height);
 VG_API_CALL void vgDestroyContextSH(void);
 
+/* Extensions for ShivaVG-2 */
+#define VG_FRAGMENT_SHADER_SH         0
+#define VG_IMAGE_UNIT_OFFSET_SH       2
+
+typedef enum {
+  VG_IMAGE_UNIT_0_SH = VG_IMAGE_UNIT_OFFSET_SH,
+  VG_IMAGE_UNIT_1_SH,
+  VG_IMAGE_UNIT_2_SH,
+  VG_IMAGE_UNIT_3_SH,
+  VG_IMAGE_UNIT_4_SH
+} VGImageUnitSH;
+
+VG_API_CALL void  vgSetShaderSourceSH(VGuint shadertype, const VGbyte* string);
+VG_API_CALL void  vgUniform1fSH(VGint location, VGfloat v0);
+VG_API_CALL void  vgUniform2fSH(VGint location, VGfloat v0, VGfloat v1);
+VG_API_CALL void  vgUniform3fSH(VGint location, VGfloat v0, VGfloat v1, VGfloat v2);
+VG_API_CALL void  vgUniform4fSH(VGint location, VGfloat v0, VGfloat v1, VGfloat v2, VGfloat v3);
+VG_API_CALL void  vgUniform1fvSH(VGint location, VGint count, const VGfloat *value);
+VG_API_CALL void  vgUniform2fvSH(VGint location, VGint count, const VGfloat *value);
+VG_API_CALL void  vgUniform3fvSH(VGint location, VGint count, const VGfloat *value);
+VG_API_CALL void  vgUniform4fvSH(VGint location, VGint count, const VGfloat *value);
+VG_API_CALL void  vgUniformMatrix2fvSH (VGint location, VGint count, VGboolean transpose, const VGfloat *value);
+VG_API_CALL void  vgUniformMatrix3fvSH (VGint location, VGint count, VGboolean transpose, const VGfloat *value);
+VG_API_CALL void  vgUniformMatrix4fvSH (VGint location, VGint count, VGboolean transpose, const VGfloat *value);
+VG_API_CALL void  vgBindImageSH(VGImage image, VGImageUnitSH unit);
+VG_API_CALL VGint vgGetUniformLocationSH(const VGbyte *name);        
+VG_API_CALL void  vgGetUniformfvSH(VGint location, VGfloat *params);  
 
 #if defined (__cplusplus)
 } /* extern "C" */
