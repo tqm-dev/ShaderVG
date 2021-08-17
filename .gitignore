@@ -36,6 +36,7 @@ examples/test_pattern
 examples/test_radial
 examples/test_tiger
 examples/test_vgu
+examples/test_fragment_shader
 *.libs
 *.la
 *.lo
