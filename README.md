@@ -26,7 +26,7 @@ $ cd ShivaVG-2
 Under UNIX systems, execute configure and make:
 ```
 $ sh autogen.sh
-$ ./configure LIBS="-lGL -lGLU -lglut -ljpeg"
+$ ./configure LIBS="-lGL -lglut -ljpeg"
 $ make
 ```
 
