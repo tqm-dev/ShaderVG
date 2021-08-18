@@ -107,13 +107,6 @@ typedef struct
   SHImageArray      images;
 
   /* Pointers to extensions */
-  SHint isGLAvailable_ClampToEdge;
-  SHint isGLAvailable_MirroredRepeat;
-  SHint isGLAvailable_Multitexture;
-  SHint isGLAvailable_TextureNonPowerOfTwo;
-  SH_PGLACTIVETEXTURE pglActiveTexture;
-  SH_PGLMULTITEXCOORD1F pglMultiTexCoord1f;
-  SH_PGLMULTITEXCOORD2F pglMultiTexCoord2f;
   
   /* GL locations */
   struct {

@@ -19,32 +19,53 @@
  */
 
 #define VG_API_EXPORT
-#include "openvg.h"
-#include "shDefs.h"
 #include "shExtensions.h"
-#include "shContext.h"
 #include <stdio.h>
 #include <string.h>
+#include <GL/glcorearb.h>
+
+/*-----------------------------------------------------
+ * OpenGL core profile
+ *-----------------------------------------------------*/
+#if defined(_WIN32)
+   PFNGLUNIFORM1IPROC                glUniform1i;
+   PFNGLUNIFORM2FVPROC               glUniform2fv;
+   PFNGLUNIFORMMATRIX3FVPROC         glUniformMatrix3fv;
+   PFNGLUNIFORM2FPROC                glUniform2f;
+   PFNGLUNIFORM4FVPROC               glUniform4fv;
+   PFNGLENABLEVERTEXATTRIBARRAYPROC  glEnableVertexAttribArray;
+   PFNGLVERTEXATTRIBPOINTERPROC      glVertexAttribPointer;
+   PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
+   PFNGLUSEPROGRAMPROC               glUseProgram;
+   PFNGLUNIFORMMATRIX4FVPROC         glUniformMatrix4fv;
+   PFNGLCREATESHADERPROC             glCreateShader;
+   PFNGLSHADERSOURCEPROC             glShaderSource;
+   PFNGLCOMPILESHADERPROC            glCompileShader;
+   PFNGLGETSHADERIVPROC              glGetShaderiv;
+   PFNGLATTACHSHADERPROC             glAttachShader;
+   PFNGLLINKPROGRAMPROC              glLinkProgram;
+   PFNGLGETATTRIBLOCATIONPROC        glGetAttribLocation;
+   PFNGLGETUNIFORMLOCATIONPROC       glGetUniformLocation;
+   PFNGLDELETESHADERPROC             glDeleteShader;
+   PFNGLDELETEPROGRAMPROC            glDeleteProgram;
+   PFNGLUNIFORM1FPROC                glUniform1f;
+   PFNGLUNIFORM3FPROC                glUniform3f;
+   PFNGLUNIFORM4FPROC                glUniform4f;
+   PFNGLUNIFORM1FVPROC               glUniform1fv;
+   PFNGLUNIFORM3FVPROC               glUniform3fv;
+   PFNGLUNIFORMMATRIX2FVPROC         glUniformMatrix2fv;
+   PFNGLGETUNIFORMFVPROC             glGetUniformfv;
+#endif
 
 /*-----------------------------------------------------
  * Extensions check
  *-----------------------------------------------------*/
-
-void fallbackActiveTexture(GLenum texture) {
-}
-
-void fallbackMultiTexCoord1f(GLenum target, GLfloat x) {
-}
-
-void fallbackMultiTexCoord2f(GLenum target, GLfloat x, GLfloat y) {
-}
-
 static int checkExtension(const char *extensions, const char *name)
 {
 	int nlen = (int)strlen(name);
 	int elen = (int)strlen(extensions);
 	const char *e = extensions;
-	SH_ASSERT(nlen > 0);
+	if(nlen <= 0) return 0;
 
 	while (1) {
 
@@ -68,16 +89,44 @@ typedef void (*PFVOID)();
 
 PFVOID shGetProcAddress(const char *name)
 {
+  #if defined(_WIN32)
+  return (PFVOID)wglGetProcAddress(name);
+  #else
   return (PFVOID)NULL;
+  #endif
 }
 
-void shLoadExtensions(VGContext *c)
+void shLoadExtensions(void *c)
 {
-    c->isGLAvailable_ClampToEdge = 0;
-    c->isGLAvailable_MirroredRepeat = 0;
-    c->isGLAvailable_Multitexture = 0;
-    c->pglActiveTexture = (SH_PGLACTIVETEXTURE)fallbackActiveTexture;
-    c->pglMultiTexCoord1f = (SH_PGLMULTITEXCOORD1F)fallbackMultiTexCoord1f;
-    c->pglMultiTexCoord2f = (SH_PGLMULTITEXCOORD2F)fallbackMultiTexCoord2f;
-    c->isGLAvailable_TextureNonPowerOfTwo = 0;
+    if(shGetProcAddress == NULL) return;
+
+  #if defined(_WIN32)
+    glUniform1i                = shGetProcAddress("glUniform1i");
+    glUniform2fv               = shGetProcAddress("glUniform2fv");
+    glUniformMatrix3fv         = shGetProcAddress("glUniformMatrix3fv");
+    glUniform2f                = shGetProcAddress("glUniform2f");
+    glUniform4fv               = shGetProcAddress("glUniform4fv");
+    glEnableVertexAttribArray  = shGetProcAddress("glEnableVertexAttribArray");
+    glVertexAttribPointer      = shGetProcAddress("glVertexAttribPointer");
+    glDisableVertexAttribArray = shGetProcAddress("glDisableVertexAttribArray");
+    glUseProgram               = shGetProcAddress("glUseProgram");
+    glUniformMatrix4fv         = shGetProcAddress("glUniformMatrix4fv");
+    glCreateShader             = shGetProcAddress("glCreateShader");
+    glShaderSource             = shGetProcAddress("glShaderSource");
+    glCompileShader            = shGetProcAddress("glCompileShader");
+    glGetShaderiv              = shGetProcAddress("glGetShaderiv");
+    glAttachShader             = shGetProcAddress("glAttachShader");
+    glLinkProgram              = shGetProcAddress("glLinkProgram");
+    glGetAttribLocation        = shGetProcAddress("glGetAttribLocation");
+    glGetUniformLocation       = shGetProcAddress("glGetUniformLocation");
+    glDeleteShader             = shGetProcAddress("glDeleteShader");
+    glDeleteProgram            = shGetProcAddress("glDeleteProgram");
+    glUniform1f                = shGetProcAddress("glUniform1f");
+    glUniform3f                = shGetProcAddress("glUniform3f");
+    glUniform4f                = shGetProcAddress("glUniform4f");
+    glUniform1fv               = shGetProcAddress("glUniform1fv");
+    glUniform3fv               = shGetProcAddress("glUniform3fv");
+    glUniformMatrix2fv         = shGetProcAddress("glUniformMatrix2fv");
+    glGetUniformfv             = shGetProcAddress("glGetUniformfv");
+  #endif
 }

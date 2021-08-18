@@ -116,7 +116,7 @@ VGContext* shGetContext()
  * VGContext constructor
  *-----------------------------------------------------*/
 
-void shLoadExtensions(VGContext *c);
+void shLoadExtensions(void *c);
 
 void VGContext_ctor(VGContext *c)
 {
