@@ -45,27 +45,7 @@
 #endif
 
 /* Type definitions */
-
-#if defined(HAVE_CONFIG_H)
-#include "../config.h"
-#
-#  if HAVE_INTTYPES_H
 #  include <inttypes.h>
-#  endif
-#
-#else
-#
-#  define int8_t    char
-#  define uint8_t   unsigned char
-#  define int16_t   short
-#  define uint16_t  unsigned short
-#  define int32_t   int
-#  define uint32_t  unsigned int
-#  define int64_t   long long
-#  define uint64_t  unsigned long long
-#
-#endif
-
 typedef int8_t      SHint8;
 typedef uint8_t     SHuint8;
 typedef int16_t     SHint16;
@@ -161,7 +141,8 @@ SHfloat getMaxFloat();
 #if defined(__APPLE__)
 #  include <OpenGL/gl.h>
 #elif defined(_WIN32)
-#  include <GL/gl.h>
+#  define GL_GLEXT_PROTOTYPES
+#  include <GL/glcorearb.h>
 #else
 #  define GL_GLEXT_PROTOTYPES
 #  include <GL/glcorearb.h>

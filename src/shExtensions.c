@@ -55,6 +55,8 @@
    PFNGLUNIFORM3FVPROC               glUniform3fv;
    PFNGLUNIFORMMATRIX2FVPROC         glUniformMatrix2fv;
    PFNGLGETUNIFORMFVPROC             glGetUniformfv;
+   PFNGLCREATEPROGRAMPROC            glCreateProgram;
+   PFNGLACTIVETEXTUREPROC            glActiveTexture;
 #endif
 
 /*-----------------------------------------------------
@@ -128,5 +130,7 @@ void shLoadExtensions(void *c)
     glUniform3fv               = shGetProcAddress("glUniform3fv");
     glUniformMatrix2fv         = shGetProcAddress("glUniformMatrix2fv");
     glGetUniformfv             = shGetProcAddress("glGetUniformfv");
+    glCreateProgram            = shGetProcAddress("glCreateProgram");
+    glActiveTexture            = shGetProcAddress("glActiveTexture");
   #endif
 }
