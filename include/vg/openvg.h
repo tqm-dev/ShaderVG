@@ -646,6 +646,14 @@ VG_API_CALL void  vgUniform1fvSH(VGint location, VGint count, const VGfloat *val
 VG_API_CALL void  vgUniform2fvSH(VGint location, VGint count, const VGfloat *value);
 VG_API_CALL void  vgUniform3fvSH(VGint location, VGint count, const VGfloat *value);
 VG_API_CALL void  vgUniform4fvSH(VGint location, VGint count, const VGfloat *value);
+VG_API_CALL void  vgUniform1iSH(VGint location, VGint v0);
+VG_API_CALL void  vgUniform2iSH(VGint location, VGint v0, VGint v1);
+VG_API_CALL void  vgUniform3iSH(VGint location, VGint v0, VGint v1, VGint v2);
+VG_API_CALL void  vgUniform4iSH(VGint location, VGint v0, VGint v1, VGint v2, VGint v3);
+VG_API_CALL void  vgUniform1ivSH(VGint location, VGint count, const VGint *value);
+VG_API_CALL void  vgUniform2ivSH(VGint location, VGint count, const VGint *value);
+VG_API_CALL void  vgUniform3ivSH(VGint location, VGint count, const VGint *value);
+VG_API_CALL void  vgUniform4ivSH(VGint location, VGint count, const VGint *value);
 VG_API_CALL void  vgUniformMatrix2fvSH (VGint location, VGint count, VGboolean transpose, const VGfloat *value);
 VG_API_CALL void  vgUniformMatrix3fvSH (VGint location, VGint count, VGboolean transpose, const VGfloat *value);
 VG_API_CALL void  vgUniformMatrix4fvSH (VGint location, VGint count, VGboolean transpose, const VGfloat *value);

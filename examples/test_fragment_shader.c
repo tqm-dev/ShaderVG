@@ -1,5 +1,10 @@
 #include "test.h"
 #include <ctype.h>
+#include <jpeglib.h>
+
+#ifndef IMAGE_DIR
+#  define IMAGE_DIR "./"
+#endif
 
 extern const VGint     pathCount;
 extern const VGint     commandCounts[];
@@ -168,16 +173,124 @@ void cleanup()
   free(tigerPaths);
 }
 
+VGImage createImageFromJpeg(const char *filename)
+{
+  FILE *infile;
+  struct jpeg_decompress_struct jdc;
+  struct jpeg_error_mgr jerr;
+  JSAMPARRAY buffer;  
+  unsigned int bstride;
+  unsigned int bbpp;
+
+  VGImage img;
+  VGubyte *data;
+  unsigned int width;
+  unsigned int height;
+  unsigned int dstride;
+  unsigned int dbpp;
+  
+  VGubyte *brow;
+  VGubyte *drow;
+  unsigned int x;
+  unsigned int lilEndianTest = 1;
+  VGImageFormat rgbaFormat;
+
+  /* Check for endianness */
+  if (((unsigned char*)&lilEndianTest)[0] == 1)
+    rgbaFormat = VG_lABGR_8888;
+  else rgbaFormat = VG_lRGBA_8888;
+  
+  /* Try to open image file */
+  infile = fopen(filename, "rb");
+  if (infile == NULL) {
+    printf("Failed opening '%s' for reading!\n", filename);
+    return VG_INVALID_HANDLE; }
+  
+  /* Setup default error handling */
+  jdc.err = jpeg_std_error(&jerr);
+  jpeg_create_decompress(&jdc);
+  
+  /* Set input file */
+  jpeg_stdio_src(&jdc, infile);
+  
+  /* Read header and start */
+  jpeg_read_header(&jdc, TRUE);
+  jpeg_start_decompress(&jdc);
+  width = jdc.output_width;
+  height = jdc.output_height;
+  
+  /* Allocate buffer using jpeg allocator */
+  bbpp = jdc.output_components;
+  bstride = width * bbpp;
+  buffer = (*jdc.mem->alloc_sarray)
+    ((j_common_ptr) &jdc, JPOOL_IMAGE, bstride, 1);
+  
+  /* Allocate image data buffer */
+  dbpp = 4;
+  dstride = width * dbpp;
+  data = (VGubyte*)malloc(dstride * height);
+  
+  /* Iterate until all scanlines processed */
+  while (jdc.output_scanline < height) {
+    
+    /* Read scanline into buffer */
+    jpeg_read_scanlines(&jdc, buffer, 1);    
+    drow = data + (height-jdc.output_scanline) * dstride;
+    brow = buffer[0];
+    
+    /* Expand to RGBA */
+    for (x=0; x<width; ++x, drow+=dbpp, brow+=bbpp) {
+      switch (bbpp) {
+      case 4:
+        drow[0] = brow[0];
+        drow[1] = brow[1];
+        drow[2] = brow[2];
+        drow[3] = brow[3];
+        break;
+      case 3:
+        drow[0] = brow[0];
+        drow[1] = brow[1];
+        drow[2] = brow[2];
+        drow[3] = 255;
+        break; }
+    }
+  }
+  
+  /* Create VG image */
+  img = vgCreateImage(rgbaFormat, width, height, VG_IMAGE_QUALITY_BETTER);
+  vgImageSubData(img, data, dstride, rgbaFormat, 0, 0, width, height);
+  
+  /* Cleanup */
+  jpeg_destroy_decompress(&jdc);
+  fclose(infile);
+  free(data);
+  
+  return img;
+}
+
+/* 
+ * Built-in input:
+ *     vg_Noramal
+ *     vg_FragPos
+ *
+ * Built-in output:
+ *     vg_FragColor
+ */
 const char* vgShaderFragmentUserTest = R"glsl(
 
+    uniform sampler2D myImageSampler;
     vec3 lightPos = vec3(0, 0, 120); // 3D space on surface
-    vec3 lightColor = vec3(83.0/255.0, 91.0/255.0, 255.0/255.0); // Blue light
 
     void vgMain(vec4 color){
+
         vec3 lightDir = normalize(lightPos - vg_FragPos);
+
         float diff = max(dot(vg_Noramal, lightDir), 0.0);
-        vec3 diffuse = diff * lightColor;
-        vg_FragColor = vec4(diffuse, 1.0) * color;
+
+        vec4 myColor = texture(myImageSampler, vec2(diff, diff));
+
+        vg_FragColor = myColor * color;
+
     }
 )glsl";
 
@@ -191,7 +304,17 @@ int main(int argc, char **argv)
   testCallback(TEST_CALLBACK_DRAG, (CallbackFunc)drag);
   
   loadTiger();
+
+  // Setup shader program
   vgSetShaderSourceSH(VG_FRAGMENT_SHADER_SH, vgShaderFragmentUserTest);
+
+  // Set image unit number
+  VGint myImageSampler = vgGetUniformLocationSH("myImageSampler");
+  vgUniform1iSH(myImageSampler, VG_IMAGE_UNIT_0_SH);
+
+  // Bind image to sampler
+  VGImage image = createImageFromJpeg(IMAGE_DIR"test_img_guitar.jpg");
+  vgBindImageSH(image, VG_IMAGE_UNIT_0_SH);
   
   testOverlayString("Press H for a list of commands");
   testRun();

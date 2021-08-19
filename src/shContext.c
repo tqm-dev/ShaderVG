@@ -58,18 +58,6 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
   /* Setup shaders for making color ramp */
   shInitRampShaders();
 
-  glUseProgram(g_context->progDraw);
-
-  /* Initialize uniform variables */
-  {
-      float mat[16];
-      shIdMatrixGL(mat);
-      glUniformMatrix4fv(g_context->locationDraw.view, 1, GL_FALSE, mat);
-      shCalcOrtho2D(mat, 0, width, 0, height);
-      glUniformMatrix4fv(g_context->locationDraw.projection, 1, GL_FALSE, mat);
-      GL_CEHCK_ERROR;
-  }
-  
   return VG_TRUE;
 }
 

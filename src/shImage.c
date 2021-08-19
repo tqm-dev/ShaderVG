@@ -1216,10 +1216,21 @@ VG_API_CALL void vgLookupSingle(VGImage dst, VGImage src,
 }
 
 VG_API_CALL void vgBindImageSH(VGImage image, VGImageUnitSH unit){
-  VG_GETCONTEXT(VG_NO_RETVAL);
 
+  VG_GETCONTEXT(VG_NO_RETVAL);
+  SH_RETURN_ERR_IF(unit < VG_IMAGE_UNIT_OFFSET_SH, VG_ILLEGAL_ARGUMENT_ERROR, SH_NO_RETVAL);
+  SH_RETURN_ERR_IF(image == VG_INVALID_HANDLE,     VG_ILLEGAL_ARGUMENT_ERROR, SH_NO_RETVAL);
   SHImage *i = (SHImage*)image;
-  glActiveTexture(VG_IMAGE_UNIT_OFFSET_SH + unit);
+  
+  glActiveTexture(GL_TEXTURE0 + unit);
+
   glBindTexture(GL_TEXTURE_2D, i->texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+  glEnable(GL_TEXTURE_2D);
+  GL_CEHCK_ERROR;
 }
 
