@@ -138,6 +138,7 @@ typedef struct
   GLuint progColorRamp;
 
   /* GL shaders */
+  const void* userShaderVertex;
   const void* userShaderFragment;
   GLint vs;
   GLint fs;

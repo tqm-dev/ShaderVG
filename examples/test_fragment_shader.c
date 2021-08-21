@@ -270,26 +270,23 @@ VGImage createImageFromJpeg(const char *filename)
 
 /* 
  * Built-in input:
- *     vg_Noramal
- *     vg_FragPos
- *
- * Built-in output:
- *     vg_FragColor
+ *     sh_Noramal
+ *     sh_FragPos
  */
 const char* vgShaderFragmentUserTest = R"glsl(
 
     uniform sampler2D myImageSampler;
     vec3 lightPos = vec3(0, 0, 120); // 3D space on surface
 
-    void vgMain(vec4 color){
+    void shMain(){
 
-        vec3 lightDir = normalize(lightPos - vg_FragPos);
+        vec3 lightDir = normalize(lightPos - sh_FragPos);
 
-        float diff = max(dot(vg_Noramal, lightDir), 0.0);
+        float diff = max(dot(sh_Noramal, lightDir), 0.0);
 
         vec4 myColor = texture(myImageSampler, vec2(diff, diff));
 
-        vg_FragColor = myColor * color;
+        gl_FragColor = myColor * sh_Color;
 
     }
 )glsl";

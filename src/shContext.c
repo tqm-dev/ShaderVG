@@ -52,6 +52,7 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
   glViewport(0,0,width,height);
   
   /* Setup shader for rendering*/
+  g_context->userShaderVertex = NULL;
   g_context->userShaderFragment = NULL;
   shInitPiplelineShaders();
  
