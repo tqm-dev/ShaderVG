@@ -37,8 +37,8 @@ Move to examples directory, execute tests:
 $ cd examples
 $ ./test_tiger
 ```
-#### test_fragment_shader
-  Well known svg tiger meets basic lighting written in GLSL. 
+#### test_tiger_shader
+  Well known svg tiger meets GLSL vertex/fragment shading. 
 
 #### test_vgu
   Constructs some path primitives using the VGU API.

@@ -627,6 +627,8 @@ VG_API_CALL void vgDestroyContextSH(void);
 
 /* Extensions for ShivaVG-2 */
 #define VG_FRAGMENT_SHADER_SH         0
+#define VG_VERTEX_SHADER_SH           1
+
 #define VG_IMAGE_UNIT_OFFSET_SH       2
 
 typedef enum {
@@ -637,7 +639,8 @@ typedef enum {
   VG_IMAGE_UNIT_4_SH
 } VGImageUnitSH;
 
-VG_API_CALL void  vgSetShaderSourceSH(VGuint shadertype, const VGbyte* string);
+VG_API_CALL void  vgShaderSourceSH(VGuint shadertype, const VGbyte* string);
+VG_API_CALL void  vgCompileShaderSH(void);
 VG_API_CALL void  vgUniform1fSH(VGint location, VGfloat v0);
 VG_API_CALL void  vgUniform2fSH(VGint location, VGfloat v0, VGfloat v1);
 VG_API_CALL void  vgUniform3fSH(VGint location, VGfloat v0, VGfloat v1, VGfloat v2);

@@ -270,6 +270,23 @@ VGImage createImageFromJpeg(const char *filename)
 
 /* 
  * Built-in input:
+ *  sh_Vertex
+ *  sh_Model
+ *  sh_ViewProjection2D
+ */
+const char* vgShaderVertexUserTest = R"glsl(
+
+    void shMain(){
+        vec4 expandLeft = vec4(-length(sh_Vertex), 0, 0, 0) / 2;
+        expandLeft.x += 100.0;
+        gl_Position = sh_ViewProjection2D * sh_Model * (expandLeft + sh_Vertex);
+    }
+
+)glsl";
+
+/* 
+ * Built-in input:
+ *     sh_Color
  *     sh_Noramal
  *     sh_FragPos
  */
@@ -302,8 +319,10 @@ int main(int argc, char **argv)
   
   loadTiger();
 
-  // Setup shader program
-  vgSetShaderSourceSH(VG_FRAGMENT_SHADER_SH, vgShaderFragmentUserTest);
+  // Setup shader programs
+  vgShaderSourceSH(VG_VERTEX_SHADER_SH,   vgShaderVertexUserTest);
+  vgShaderSourceSH(VG_FRAGMENT_SHADER_SH, vgShaderFragmentUserTest);
+  vgCompileShaderSH();
 
   // Set image unit number
   VGint myImageSampler = vgGetUniformLocationSH("myImageSampler");

@@ -43,8 +43,9 @@ static const char* vgShaderVertexPipeline = R"glsl(
     out vec3 sh_Noramal;
 
 /*** Built-in variables for shMain ********************/
-    vec4 sh_WorldCoord;
-    mat4 sh_ViewProjection;
+    vec4 sh_Vertex;
+    mat4 sh_Model;
+    mat4 sh_ViewProjection2D;
 
 /*** Functions ****************************************/
 
@@ -55,13 +56,12 @@ static const char* vgShaderVertexPipeline = R"glsl(
     void main() {
 
         /* Stage 3: Transformation */
-        sh_WorldCoord = model * vec4(pos, 0, 1);
-
-        sh_ViewProjection = projection * view;
-
-        gl_Position = sh_ViewProjection * sh_WorldCoord;
+        sh_Vertex = vec4(pos, 0, 1);
+        sh_Model = model;
+        sh_ViewProjection2D = projection * view;
 
         /* Extended Stage: User defined shader that affects gl_Position */
+        gl_Position = sh_ViewProjection2D * sh_Model * sh_Vertex;
         shMain();
 
         /* Built-in 3D pos in world space */
@@ -222,9 +222,9 @@ static const char* vgShaderFragmentPipeline = R"glsl(
 
         /* Stage 8: Color Transformation, Blending, and Antialiasing */
         sh_Color = col * scaleFactorBias[0] + scaleFactorBias[1] ;
-        gl_FragColor = sh_Color;
 
         /* Extended Stage: User defined shader that affects gl_FragColor */
+        gl_FragColor = sh_Color;
         shMain();
     }
 )glsl";
@@ -397,11 +397,23 @@ void shDeinitRampShaders(void){
   glDeleteProgram(context->progColorRamp);
 }
 
-VG_API_CALL void vgSetShaderSourceSH(VGuint shadertype, const VGbyte* string){
+VG_API_CALL void vgShaderSourceSH(VGuint shadertype, const VGbyte* string){
     VG_GETCONTEXT(VG_NO_RETVAL);
-    SH_RETURN_ERR_IF(shadertype != VG_FRAGMENT_SHADER_SH, VG_ILLEGAL_ARGUMENT_ERROR, SH_NO_RETVAL);
+
+    switch(shadertype) {
+		case VG_FRAGMENT_SHADER_SH:
+			context->userShaderFragment = (const void*)string;
+			break;
+		case VG_VERTEX_SHADER_SH:
+			context->userShaderVertex = (const void*)string;
+			break;
+		default:
+			break;
+    }
+}
+
+VG_API_CALL void vgCompileShaderSH(void){
     shDeinitPiplelineShaders();
-    context->userShaderFragment = (const void*)string;
     shInitPiplelineShaders();
 }
 
