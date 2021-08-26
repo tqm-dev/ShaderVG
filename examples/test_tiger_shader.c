@@ -272,7 +272,7 @@ VGImage createImageFromJpeg(const char *filename)
  * Built-in input:
  *  sh_Vertex
  *  sh_Model
- *  sh_ViewProjection2D
+ *  sh_Ortho
  */
 const char* vgShaderVertexUserTest = R"glsl(
 
