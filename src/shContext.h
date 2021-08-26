@@ -113,7 +113,6 @@ typedef struct
       GLint pos            ;
       GLint textureUV      ;
       GLint model          ;
-      GLint view           ;
       GLint projection     ;
       GLint paintInverted  ;
       GLint drawMode       ;

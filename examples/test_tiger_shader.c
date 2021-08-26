@@ -279,7 +279,7 @@ const char* vgShaderVertexUserTest = R"glsl(
     void shMain(){
         vec4 expandLeft = vec4(-length(sh_Vertex), 0, 0, 0) / 2;
         expandLeft.x += 100.0;
-        gl_Position = sh_ViewProjection2D * sh_Model * (expandLeft + sh_Vertex);
+        gl_Position = sh_Ortho * sh_Model * (expandLeft + sh_Vertex);
     }
 
 )glsl";
@@ -308,17 +308,8 @@ const char* vgShaderFragmentUserTest = R"glsl(
     }
 )glsl";
 
-int main(int argc, char **argv)
+void setupShaders()
 {
-  testInit(argc, argv, 600,600, "ShivaVG: Tiger SVG Test");
-  testCallback(TEST_CALLBACK_CLEANUP, (CallbackFunc)cleanup);
-  testCallback(TEST_CALLBACK_DISPLAY, (CallbackFunc)display);
-  testCallback(TEST_CALLBACK_KEY, (CallbackFunc)key);
-  testCallback(TEST_CALLBACK_BUTTON, (CallbackFunc)click);
-  testCallback(TEST_CALLBACK_DRAG, (CallbackFunc)drag);
-  
-  loadTiger();
-
   // Setup shader programs
   vgShaderSourceSH(VG_VERTEX_SHADER_SH,   vgShaderVertexUserTest);
   vgShaderSourceSH(VG_FRAGMENT_SHADER_SH, vgShaderFragmentUserTest);
@@ -331,7 +322,21 @@ int main(int argc, char **argv)
   // Bind image to sampler
   VGImage image = createImageFromJpeg(IMAGE_DIR"test_img_guitar.jpg");
   vgBindImageSH(image, VG_IMAGE_UNIT_0_SH);
+}
+
+int main(int argc, char **argv)
+{
+  testInit(argc, argv, 600,600, "ShivaVG: Tiger SVG Test");
+  testCallback(TEST_CALLBACK_CLEANUP, (CallbackFunc)cleanup);
+  testCallback(TEST_CALLBACK_DISPLAY, (CallbackFunc)display);
+  testCallback(TEST_CALLBACK_KEY, (CallbackFunc)key);
+  testCallback(TEST_CALLBACK_BUTTON, (CallbackFunc)click);
+  testCallback(TEST_CALLBACK_DRAG, (CallbackFunc)drag);
   
+  loadTiger();
+
+  setupShaders();
+
   testOverlayString("Press H for a list of commands");
   testRun();
   

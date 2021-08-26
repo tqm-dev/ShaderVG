@@ -75,9 +75,8 @@ VG_API_CALL void vgResizeSurfaceSH(VGint width, VGint height)
   
   /* Setup projection matrix */
   float mat[16];
-  shIdMatrixGL(mat);
-  glUniformMatrix4fv(context->locationDraw.view, 1, GL_FALSE, mat);
-  shCalcOrtho2D(mat, 0, width, 0, height);
+  float volume = fmax(width, height) / 2;
+  shCalcOrtho2D(mat, 0, width, 0, height, -volume, volume);
   glUseProgram(context->progDraw);
   glUniformMatrix4fv(context->locationDraw.projection, 1, GL_FALSE, mat);
   GL_CEHCK_ERROR;

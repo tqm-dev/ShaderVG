@@ -134,11 +134,11 @@ int shLineLineXsection(SHVector2 *o1, SHVector2 *v1,
   return 1;
 }
 
-void shCalcOrtho2D(float* mat, float left, float right, float bottom, float top)
+void shCalcOrtho2D(float* mat, float left, float right, float bottom, float top, float near, float far)
 {
     /* http://en.wikipedia.org/wiki/Orthographic_projection */
-    const float zNear = -1.0f;
-    const float zFar = 1.0f;
+    const float zNear = near;
+    const float zFar = far;
     const float inv_z = 1.0f / (zFar - zNear);
     const float inv_y = 1.0f / (top - bottom);
     const float inv_x = 1.0f / (right - left);

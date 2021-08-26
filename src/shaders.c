@@ -31,9 +31,8 @@ static const char* vgShaderVertexPipeline = R"glsl(
 /*** Input *******************/
     in vec2 pos;
     in vec2 textureUV;
-    uniform mat4 model;
-    uniform mat4 view;
-    uniform mat4 projection;
+    uniform mat4 sh_Model;
+    uniform mat4 sh_Ortho;
     uniform mat3 paintInverted;
 
 /*** Output ******************/
@@ -42,10 +41,8 @@ static const char* vgShaderVertexPipeline = R"glsl(
     out vec3 sh_FragPos;
     out vec3 sh_Noramal;
 
-/*** Built-in variables for shMain ********************/
+/*** Grobal variables ********************/
     vec4 sh_Vertex;
-    mat4 sh_Model;
-    mat4 sh_ViewProjection2D;
 
 /*** Functions ****************************************/
 
@@ -57,18 +54,16 @@ static const char* vgShaderVertexPipeline = R"glsl(
 
         /* Stage 3: Transformation */
         sh_Vertex = vec4(pos, 0, 1);
-        sh_Model = model;
-        sh_ViewProjection2D = projection * view;
 
         /* Extended Stage: User defined shader that affects gl_Position */
-        gl_Position = sh_ViewProjection2D * sh_Model * sh_Vertex;
+        gl_Position = sh_Ortho * sh_Model * sh_Vertex;
         shMain();
 
         /* Built-in 3D pos in world space */
-        sh_FragPos = (model * vec4(pos, 0, 1)).xyz;
+        sh_FragPos = (sh_Model * vec4(pos, 0, 1)).xyz;
 
         /* Built-in 3D normal pos in world space */
-        vec3 normalPos = (model * vec4(pos, 1, 1)).xyz; 
+        vec3 normalPos = (sh_Model * vec4(pos, 1, 1)).xyz; 
         sh_Noramal = normalize(normalPos - sh_FragPos);
 
         /* 2D pos in texture space */
@@ -306,33 +301,18 @@ void shInitPiplelineShaders(void) {
   GL_CEHCK_ERROR;
 
   context->locationDraw.pos            = glGetAttribLocation(context->progDraw,  "pos");
-  GL_CEHCK_ERROR;
   context->locationDraw.textureUV      = glGetAttribLocation(context->progDraw,  "textureUV");
-  GL_CEHCK_ERROR;
-  context->locationDraw.model          = glGetUniformLocation(context->progDraw, "model");
-  GL_CEHCK_ERROR;
-  context->locationDraw.view           = glGetUniformLocation(context->progDraw, "view");
-  GL_CEHCK_ERROR;
-  context->locationDraw.projection     = glGetUniformLocation(context->progDraw, "projection");
-  GL_CEHCK_ERROR;
+  context->locationDraw.model          = glGetUniformLocation(context->progDraw, "sh_Model");
+  context->locationDraw.projection     = glGetUniformLocation(context->progDraw, "sh_Ortho");
   context->locationDraw.paintInverted  = glGetUniformLocation(context->progDraw, "paintInverted");
-  GL_CEHCK_ERROR;
   context->locationDraw.drawMode       = glGetUniformLocation(context->progDraw, "drawMode");
-  GL_CEHCK_ERROR;
   context->locationDraw.imageSampler   = glGetUniformLocation(context->progDraw, "imageSampler");
-  GL_CEHCK_ERROR;
   context->locationDraw.imageMode      = glGetUniformLocation(context->progDraw, "imageMode");
-  GL_CEHCK_ERROR;
   context->locationDraw.paintType      = glGetUniformLocation(context->progDraw, "paintType");
-  GL_CEHCK_ERROR;
   context->locationDraw.rampSampler    = glGetUniformLocation(context->progDraw, "rampSampler");
-  GL_CEHCK_ERROR;
   context->locationDraw.patternSampler = glGetUniformLocation(context->progDraw, "patternSampler");
-  GL_CEHCK_ERROR;
   context->locationDraw.paintParams    = glGetUniformLocation(context->progDraw, "paintParams");
-  GL_CEHCK_ERROR;
   context->locationDraw.paintColor     = glGetUniformLocation(context->progDraw, "paintColor");
-  GL_CEHCK_ERROR;
   context->locationDraw.scaleFactorBias= glGetUniformLocation(context->progDraw, "scaleFactorBias");
   GL_CEHCK_ERROR;
 
@@ -344,9 +324,8 @@ void shInitPiplelineShaders(void) {
 
   /* Initialize uniform variables */
   float mat[16];
-  shIdMatrixGL(mat);
-  glUniformMatrix4fv(context->locationDraw.view, 1, GL_FALSE, mat);
-  shCalcOrtho2D(mat, 0, context->surfaceWidth , 0, context->surfaceHeight );
+  float volume = fmax(context->surfaceWidth, context->surfaceHeight) / 2;
+  shCalcOrtho2D(mat, 0, context->surfaceWidth , 0, context->surfaceHeight, -volume, volume);
   glUniformMatrix4fv(context->locationDraw.projection, 1, GL_FALSE, mat);
   GL_CEHCK_ERROR;
 }
