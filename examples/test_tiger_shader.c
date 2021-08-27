@@ -1,6 +1,7 @@
 #include "test.h"
 #include <ctype.h>
 #include <jpeglib.h>
+#include <math.h>
 
 #ifndef IMAGE_DIR
 #  define IMAGE_DIR "./"
@@ -270,6 +271,71 @@ VGImage createImageFromJpeg(const char *filename)
 
 // http://git.jb55.com/polyadvent/file/src/mat4.c.html
 typedef float mat4;
+int float_eq(float a, float b) {
+  return fabsf(a - b) < 0.0001;
+}
+mat4 *mat4_id(mat4 *dst) {
+   dst[0]  = 1.0f; dst[1]  = 0.0f; dst[2]  = 0.0f; dst[3]  = 0.0f;
+   dst[4]  = 0.0f; dst[5]  = 1.0f; dst[6]  = 0.0f; dst[7]  = 0.0f;
+   dst[8]  = 0.0f; dst[9]  = 0.0f; dst[10] = 1.0f; dst[11] = 0.0f;
+   dst[12] = 0.0f; dst[13] = 0.0f; dst[14] = 0.0f; dst[15] = 1.0f;
+
+   return dst;
+}
+mat4 *mat4_rotate(const mat4 *mat, const float angle,
+                   const float *axis, mat4 *dest) {
+   float x = axis[0], y = axis[1], z = axis[2];
+   float len = (float)sqrt(x*x + y*y + z*z);
+ 
+   if (float_eq(len, 0.)) { return NULL; }
+   // TODO: float comparison tool
+   if (!float_eq(len, 1.)) {
+     len = 1 / len;
+     x *= len;
+     y *= len;
+     z *= len;
+   }
+ 
+   float s = (float)sin(angle);
+   float c = (float)cos(angle);
+   float t = 1-c;
+ 
+   // Cache the matrix values (makes for huge speed increases!)
+   float a00 = mat[0], a01 = mat[1], a02 = mat[2], a03  = mat[3];
+   float a10 = mat[4], a11 = mat[5], a12 = mat[6], a13  = mat[7];
+   float a20 = mat[8], a21 = mat[9], a22 = mat[10], a23 = mat[11];
+ 
+   // Construct the elements of the rotation matrix
+   float b00 = x*x*t + c, b01 = y*x*t + z*s, b02 = z*x*t - y*s;
+   float b10 = x*y*t - z*s, b11 = y*y*t + c, b12 = z*y*t + x*s;
+   float b20 = x*z*t + y*s, b21 = y*z*t - x*s, b22 = z*z*t + c;
+ 
+   // If the source and destination differ, copy the unchanged last row
+   if(mat != dest) {
+     dest[12] = mat[12];
+     dest[13] = mat[13];
+     dest[14] = mat[14];
+     dest[15] = mat[15];
+   }
+ 
+   // Perform rotation-specific matrix multiplication
+   dest[0] = a00*b00 + a10*b01 + a20*b02;
+   dest[1] = a01*b00 + a11*b01 + a21*b02;
+   dest[2] = a02*b00 + a12*b01 + a22*b02;
+   dest[3] = a03*b00 + a13*b01 + a23*b02;
+ 
+   dest[4] = a00*b10 + a10*b11 + a20*b12;
+   dest[5] = a01*b10 + a11*b11 + a21*b12;
+   dest[6] = a02*b10 + a12*b11 + a22*b12;
+   dest[7] = a03*b10 + a13*b11 + a23*b12;
+ 
+   dest[8] = a00*b20 + a10*b21 + a20*b22;
+   dest[9] = a01*b20 + a11*b21 + a21*b22;
+   dest[10] = a02*b20 + a12*b21 + a22*b22;
+   dest[11] = a03*b20 + a13*b21 + a23*b22;
+ 
+   return dest;
+}
 mat4 *mat4_frustum (float left, float right, float bottom,
                      float top, float near, float far, mat4 *dest) {
      float rl = (right - left);
@@ -348,7 +414,8 @@ void setupShaders()
 
   // Set view matrix
   VGint myView = vgGetUniformLocationSH("myView");
-  VGfloat matView[16] = {1.0f,0,0,0,0,1.0f,0,0,0,0,1.0f,0,0,0,0,1.0f};
+  VGfloat matView[16];
+  mat4_id(matView);
   matView[14] = -1.01f;
   vgUniformMatrix4fvSH(myView, 1, VG_FALSE, matView);
 
@@ -356,9 +423,9 @@ void setupShaders()
   VGint myPerspective = vgGetUniformLocationSH("myPerspective");
   float width  = testWidth();
   float height = testHeight();
-  VGfloat mat[16];
-  mat4_frustum(0, width, 0, height, 1.0f, 10.0f, mat);
-  vgUniformMatrix4fvSH(myPerspective, 1, VG_FALSE, mat);
+  VGfloat matPersp[16];
+  mat4_frustum(0, width, 0, height, 1.0f, 10.0f, matPersp);
+  vgUniformMatrix4fvSH(myPerspective, 1, VG_FALSE, matPersp);
 
   // Set image unit number
   VGint myImageSampler = vgGetUniformLocationSH("myImageSampler");
