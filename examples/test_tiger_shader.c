@@ -268,6 +268,32 @@ VGImage createImageFromJpeg(const char *filename)
   return img;
 }
 
+// http://git.jb55.com/polyadvent/file/src/mat4.c.html
+typedef float mat4;
+mat4 *mat4_frustum (float left, float right, float bottom,
+                     float top, float near, float far, mat4 *dest) {
+     float rl = (right - left);
+     float tb = (top - bottom);
+     float fn = (far - near);
+     dest[0] = (near*2) / rl;
+     dest[1] = 0;
+     dest[2] = 0;
+     dest[3] = 0;
+     dest[4] = 0;
+     dest[5] = (near*2) / tb;
+     dest[6] = 0;
+     dest[7] = 0;
+     dest[8] = (right + left) / rl;
+     dest[9] = (top + bottom) / tb;
+     dest[10] = -(far + near) / fn;
+     dest[11] = -1;
+     dest[12] = 0;
+     dest[13] = 0;
+     dest[14] = -(far*near*2) / fn;
+     dest[15] = 0;
+    return dest;
+}
+
 /* 
  * Built-in input:
  *  sh_Vertex
@@ -276,10 +302,15 @@ VGImage createImageFromJpeg(const char *filename)
  */
 const char* vgShaderVertexUserTest = R"glsl(
 
+    uniform mat4 myView;
+    uniform mat4 myPerspective;
+
     void shMain(){
+
         vec4 expandLeft = vec4(-length(sh_Vertex), 0, 0, 0) / 2;
         expandLeft.x += 100.0;
-        gl_Position = sh_Ortho * sh_Model * (expandLeft + sh_Vertex);
+
+        gl_Position = myPerspective * myView * sh_Model * (expandLeft + sh_Vertex);
     }
 
 )glsl";
@@ -314,6 +345,20 @@ void setupShaders()
   vgShaderSourceSH(VG_VERTEX_SHADER_SH,   vgShaderVertexUserTest);
   vgShaderSourceSH(VG_FRAGMENT_SHADER_SH, vgShaderFragmentUserTest);
   vgCompileShaderSH();
+
+  // Set view matrix
+  VGint myView = vgGetUniformLocationSH("myView");
+  VGfloat matView[16] = {1.0f,0,0,0,0,1.0f,0,0,0,0,1.0f,0,0,0,0,1.0f};
+  matView[14] = -1.01f;
+  vgUniformMatrix4fvSH(myView, 1, VG_FALSE, matView);
+
+  // Set perspective transform
+  VGint myPerspective = vgGetUniformLocationSH("myPerspective");
+  float width  = testWidth();
+  float height = testHeight();
+  VGfloat mat[16];
+  mat4_frustum(0, width, 0, height, 1.0f, 10.0f, mat);
+  vgUniformMatrix4fvSH(myPerspective, 1, VG_FALSE, mat);
 
   // Set image unit number
   VGint myImageSampler = vgGetUniformLocationSH("myImageSampler");

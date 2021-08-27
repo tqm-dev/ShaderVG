@@ -76,8 +76,8 @@ void shMatrixToGL(SHMatrix3x3 *m, SHfloat mgl[16])
      have to shift the third column of our 3x3 matrix to right */
   mgl[0] = m->m[0][0]; mgl[4] = m->m[0][1]; mgl[8]  = 0.0f; mgl[12] = m->m[0][2];
   mgl[1] = m->m[1][0]; mgl[5] = m->m[1][1]; mgl[9]  = 0.0f; mgl[13] = m->m[1][2];
-  mgl[2] = m->m[2][0]; mgl[6] = m->m[2][1]; mgl[10] = 1.0f; mgl[14] = m->m[2][1];
-  mgl[3] = 0.0f;       mgl[7] = 0.0f;       mgl[11] = 0.0f; mgl[15] = 1.0f;
+  mgl[2] = 0.0f;       mgl[6] = 0.0f      ; mgl[10] = 1.0f; mgl[14] = 0.0f;
+  mgl[3] = m->m[2][0]; mgl[7] = m->m[2][1]; mgl[11] = 0.0f; mgl[15] = m->m[2][2];
 }
 
 int shInvertMatrix(SHMatrix3x3 *m, SHMatrix3x3 *mout)
