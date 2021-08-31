@@ -426,10 +426,16 @@ const char* vgShaderVertexUserTest = R"glsl(
     uniform mat4 myModel;
     uniform mat4 myView;
     uniform mat4 myPerspective;
+    out vec3 myNoramal;
+    out vec3 myFragPos;
 
     void shMain(){
 
         gl_Position = myPerspective * myView * sh_Model * myModel * sh_Vertex;
+
+        myFragPos = (sh_Model * myModel * sh_Vertex).xyz;
+        vec3 normalPos = (sh_Model * myModel * vec4(sh_Vertex.xy, 1, sh_Vertex.w)).xyz; 
+        myNoramal = normalize(normalPos - myFragPos);
     }
 
 )glsl";
@@ -437,19 +443,19 @@ const char* vgShaderVertexUserTest = R"glsl(
 /* 
  * Built-in input:
  *     sh_Color
- *     sh_Noramal
- *     sh_FragPos
  */
 const char* vgShaderFragmentUserTest = R"glsl(
 
     uniform sampler2D myImageSampler;
     vec3 lightPos = vec3(0, 0, 120); // 3D space on surface
+    in vec3 myNoramal;
+    in vec3 myFragPos;
 
     void shMain(){
 
-        vec3 lightDir = normalize(lightPos - sh_FragPos);
+        vec3 lightDir = normalize(lightPos - myFragPos);
 
-        float diff = max(dot(sh_Noramal, lightDir), 0.0);
+        float diff = max(dot(myNoramal, lightDir), 0.0);
 
         vec4 myColor = texture(myImageSampler, vec2(diff, diff));
 

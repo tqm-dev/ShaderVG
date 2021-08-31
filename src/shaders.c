@@ -38,8 +38,6 @@ static const char* vgShaderVertexPipeline = R"glsl(
 /*** Output ******************/
     out vec2 texImageCoord;
     out vec2 paintCoord;
-    out vec3 sh_FragPos;
-    out vec3 sh_Noramal;
 
 /*** Grobal variables ********************/
     vec4 sh_Vertex;
@@ -56,15 +54,7 @@ static const char* vgShaderVertexPipeline = R"glsl(
         sh_Vertex = vec4(pos, 0, 1);
 
         /* Extended Stage: User defined shader that affects gl_Position */
-        gl_Position = sh_Ortho * sh_Model * sh_Vertex;
         shMain();
-
-        /* Built-in 3D pos in world space */
-        sh_FragPos = (sh_Model * vec4(pos, 0, 1)).xyz;
-
-        /* Built-in 3D normal pos in world space */
-        vec3 normalPos = (sh_Model * vec4(pos, 1, 1)).xyz; 
-        sh_Noramal = normalize(normalPos - sh_FragPos);
 
         /* 2D pos in texture space */
         texImageCoord = textureUV;
@@ -76,7 +66,7 @@ static const char* vgShaderVertexPipeline = R"glsl(
 )glsl";
 
 static const char* vgShaderVertexUserDefault = R"glsl(
-    void shMain(){ /* Do nothing */ }
+    void shMain(){ gl_Position = sh_Ortho * sh_Model * sh_Vertex; }
 )glsl";
 
 static const char* vgShaderFragmentPipeline = R"glsl(
@@ -100,8 +90,6 @@ static const char* vgShaderFragmentPipeline = R"glsl(
 
     in vec2 texImageCoord;
     in vec2 paintCoord;
-    in vec3 sh_FragPos;
-    in vec3 sh_Noramal;
 
 /*** Input ********************************************/
 
@@ -219,13 +207,12 @@ static const char* vgShaderFragmentPipeline = R"glsl(
         sh_Color = col * scaleFactorBias[0] + scaleFactorBias[1] ;
 
         /* Extended Stage: User defined shader that affects gl_FragColor */
-        gl_FragColor = sh_Color;
         shMain();
     }
 )glsl";
 
 static const char* vgShaderFragmentUserDefault = R"glsl(
-    void shMain(){ /* Do nothing */ };
+    void shMain(){ gl_FragColor = sh_Color; };
 )glsl";
 
 static const char* vgShaderVertexColorRamp = R"glsl(
