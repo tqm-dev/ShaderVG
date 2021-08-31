@@ -36,6 +36,14 @@ const char commands[] =
   "P - pan mode\n"
   "SPACE - animation pause\\play\n";
 
+typedef float mat4;
+mat4 *mat4_id(mat4 *dst);
+mat4 *mat4_rotate(const mat4 *mat, const float angle,
+            const float *axis, mat4 *dest);
+mat4 *mat4_perspective(float fov, float aspect, float near,
+                float far, mat4 *dest);
+mat4 *mat4_multiply(const mat4 *a, const mat4 *b, mat4 *dst);
+
 void display(float interval)
 {
   int i;
@@ -47,6 +55,15 @@ void display(float interval)
     if (ang > 360) ang -= 360;
   }
   
+  // Set rotate matrix
+  VGint myModel = vgGetUniformLocationSH("myModel");
+  VGfloat matModel[16];
+  mat4_id(matModel);
+  VGfloat axis[3] = { 1,0,0 };
+  mat4_rotate(matModel, ang * ( M_PI / 180.0 ), axis, matModel);
+  // Rotate in 3D
+  vgUniformMatrix4fvSH(myModel, 1, VG_FALSE, matModel);
+ 
   vgSetfv(VG_CLEAR_COLOR, 4, clearColor);
   vgClear(0,0,testWidth(),testHeight());
   
@@ -270,7 +287,6 @@ VGImage createImageFromJpeg(const char *filename)
 }
 
 // http://git.jb55.com/polyadvent/file/src/mat4.c.html
-typedef float mat4;
 int float_eq(float a, float b) {
   return fabsf(a - b) < 0.0001;
 }
@@ -360,6 +376,45 @@ mat4 *mat4_frustum (float left, float right, float bottom,
     return dest;
 }
 
+mat4 *mat4_perspective(float fov, float aspect, float near,
+                       float far, mat4 *dest)
+{
+    float top = near * tanf(fov*M_PI / 360.0f);
+    float right = top * aspect;
+    return mat4_frustum(-right, right, -top, top, near, far, dest);
+}
+
+mat4 *mat4_multiply(const mat4 *a, const mat4 *b, mat4 *dst) {
+    float a00 = a[0],  a01 = a[1],  a02 = a[2],  a03 = a[3];
+    float a10 = a[4],  a11 = a[5],  a12 = a[6],  a13 = a[7];
+    float a20 = a[8],  a21 = a[9],  a22 = a[10], a23 = a[11];
+    float a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+
+    float b00 = b[0],  b01 = b[1],  b02 = b[2],  b03 = b[3];
+    float b10 = b[4],  b11 = b[5],  b12 = b[6],  b13 = b[7];
+    float b20 = b[8],  b21 = b[9],  b22 = b[10], b23 = b[11];
+    float b30 = b[12], b31 = b[13], b32 = b[14], b33 = b[15];
+
+    dst[0]  = b00*a00 + b01*a10 + b02*a20 + b03*a30;
+    dst[1]  = b00*a01 + b01*a11 + b02*a21 + b03*a31;
+    dst[2]  = b00*a02 + b01*a12 + b02*a22 + b03*a32;
+    dst[3]  = b00*a03 + b01*a13 + b02*a23 + b03*a33;
+    dst[4]  = b10*a00 + b11*a10 + b12*a20 + b13*a30;
+    dst[5]  = b10*a01 + b11*a11 + b12*a21 + b13*a31;
+    dst[6]  = b10*a02 + b11*a12 + b12*a22 + b13*a32;
+    dst[7]  = b10*a03 + b11*a13 + b12*a23 + b13*a33;
+    dst[8]  = b20*a00 + b21*a10 + b22*a20 + b23*a30;
+    dst[9]  = b20*a01 + b21*a11 + b22*a21 + b23*a31;
+    dst[10] = b20*a02 + b21*a12 + b22*a22 + b23*a32;
+    dst[11] = b20*a03 + b21*a13 + b22*a23 + b23*a33;
+    dst[12] = b30*a00 + b31*a10 + b32*a20 + b33*a30;
+    dst[13] = b30*a01 + b31*a11 + b32*a21 + b33*a31;
+    dst[14] = b30*a02 + b31*a12 + b32*a22 + b33*a32;
+    dst[15] = b30*a03 + b31*a13 + b32*a23 + b33*a33;
+
+    return dst;
+}
+
 /* 
  * Built-in input:
  *  sh_Vertex
@@ -368,15 +423,13 @@ mat4 *mat4_frustum (float left, float right, float bottom,
  */
 const char* vgShaderVertexUserTest = R"glsl(
 
+    uniform mat4 myModel;
     uniform mat4 myView;
     uniform mat4 myPerspective;
 
     void shMain(){
 
-        vec4 expandLeft = vec4(-length(sh_Vertex), 0, 0, 0) / 2;
-        expandLeft.x += 100.0;
-
-        gl_Position = myPerspective * myView * sh_Model * (expandLeft + sh_Vertex);
+        gl_Position = myPerspective * myView * sh_Model * myModel * sh_Vertex;
     }
 
 )glsl";
@@ -412,19 +465,23 @@ void setupShaders()
   vgShaderSourceSH(VG_FRAGMENT_SHADER_SH, vgShaderFragmentUserTest);
   vgCompileShaderSH();
 
-  // Set view matrix
+  float width  = testWidth();
+  float height = testHeight();
+  float footprint = fmax(width, height);
+
+  // Set view matrix for perspective transform
   VGint myView = vgGetUniformLocationSH("myView");
   VGfloat matView[16];
   mat4_id(matView);
-  matView[14] = -1.01f;
+  matView[12] = -footprint/2;
+  matView[13] = -footprint/2;
+  matView[14] = -footprint/2;
   vgUniformMatrix4fvSH(myView, 1, VG_FALSE, matView);
 
   // Set perspective transform
   VGint myPerspective = vgGetUniformLocationSH("myPerspective");
-  float width  = testWidth();
-  float height = testHeight();
   VGfloat matPersp[16];
-  mat4_frustum(0, width, 0, height, 1.0f, 10.0f, matPersp);
+  mat4_perspective(90, width / height, 1.0f, footprint, matPersp);
   vgUniformMatrix4fvSH(myPerspective, 1, VG_FALSE, matPersp);
 
   // Set image unit number
