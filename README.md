@@ -35,7 +35,7 @@ $ make
 Move to examples directory, execute tests:
 ```
 $ cd examples
-$ ./test_tiger
+$ ./test_tiger_shader
 ```
 #### test_tiger_shader
   Well known svg tiger meets GLSL vertex/fragment shading. 
