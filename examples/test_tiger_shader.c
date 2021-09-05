@@ -448,19 +448,25 @@ const char* vgShaderFragmentUserTest = R"glsl(
 
     uniform sampler2D myImageSampler;
     vec3 lightPos = vec3(0, 0, 120); // 3D space on surface
+    vec3 lightColor = vec3(1.0, 1.0, 1.0);
+    vec3 cameraPos = vec3(300, 300, 300); 
     in vec3 myNoramal;
     in vec3 myFragPos;
 
     void shMain(){
 
         vec3 lightDir = normalize(lightPos - myFragPos);
+        vec3 reflectDir = reflect(-lightDir, myNoramal);
+        vec3 viewDir = normalize(cameraPos - myFragPos);
 
-        float diff = max(dot(myNoramal, lightDir), 0.0);
+        float ambientFactor  = 0.5;
+        float diffuseFactor  = max(dot(myNoramal, lightDir), 0.0);
+        float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), 8);
 
-        vec4 myColor = texture(myImageSampler, vec2(diff, diff));
-
-        gl_FragColor = myColor * sh_Color;
-
+        vec3 ambient  = ambientFactor  * lightColor;
+        vec3 diffuse  = diffuseFactor  * lightColor;
+        vec3 specular = specularFactor * lightColor * 0.5;
+        gl_FragColor  = vec4((ambient + diffuse + specular) * sh_Color.rgb, 1.0);
     }
 )glsl";
 
