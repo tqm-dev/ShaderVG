@@ -48,7 +48,7 @@ void display(float interval)
 {
   int i;
   const VGfloat *style;
-  VGfloat clearColor[] = {1,1,1,1};
+  VGfloat clearColor[] = {0,0,0,0};
   
   if (animate) {
     ang += interval * 360 * 0.1f;
@@ -434,8 +434,9 @@ const char* vgShaderVertexUserTest = R"glsl(
         gl_Position = myPerspective * myView * sh_Model * myModel * sh_Vertex;
 
         myFragPos = (sh_Model * myModel * sh_Vertex).xyz;
-        vec3 normalPos = (sh_Model * myModel * vec4(sh_Vertex.xy, 1, sh_Vertex.w)).xyz; 
-        myNoramal = normalize(normalPos - myFragPos);
+
+        vec4 normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, 1, sh_Vertex.w);
+        myNoramal = normalize(normalPos.xyz - myFragPos);
     }
 
 )glsl";
@@ -447,7 +448,7 @@ const char* vgShaderVertexUserTest = R"glsl(
 const char* vgShaderFragmentUserTest = R"glsl(
 
     uniform sampler2D myImageSampler;
-    vec3 lightPos = vec3(0, 0, 120); // 3D space on surface
+    vec3 lightPos = vec3(300, 600, 300);
     vec3 lightColor = vec3(1.0, 1.0, 1.0);
     vec3 cameraPos = vec3(300, 300, 300); 
     in vec3 myNoramal;
@@ -459,13 +460,13 @@ const char* vgShaderFragmentUserTest = R"glsl(
         vec3 reflectDir = reflect(-lightDir, myNoramal);
         vec3 viewDir = normalize(cameraPos - myFragPos);
 
-        float ambientFactor  = 0.5;
+        float ambientFactor  = 0.3;
         float diffuseFactor  = max(dot(myNoramal, lightDir), 0.0);
         float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), 8);
 
         vec3 ambient  = ambientFactor  * lightColor;
         vec3 diffuse  = diffuseFactor  * lightColor;
-        vec3 specular = specularFactor * lightColor * 0.5;
+        vec3 specular = specularFactor * lightColor * 0.8;
         gl_FragColor  = vec4((ambient + diffuse + specular) * sh_Color.rgb, 1.0);
     }
 )glsl";
