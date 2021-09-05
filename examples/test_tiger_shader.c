@@ -405,6 +405,9 @@ const char* vgShaderVertexUserTest = R"glsl(
         myFragPos = (sh_Model * myModel * sh_Vertex).xyz;
 
         vec4 normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, 1, sh_Vertex.w);
+        if(normalPos.z < myFragPos.z)
+           // Flip normal pos (FIXME:Looking for more efficient way ...)
+           normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, -1, sh_Vertex.w);
         myNoramal = normalize(normalPos.xyz - myFragPos);
     }
 
