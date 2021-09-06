@@ -1,6 +1,6 @@
-# ShivaVG-2
+# ShaderVG
 
-_**Note:** This project is based on https://github.com/ileben/ShivaVG that is no longer actively maintained._
+_**Note:** This project is based on https://github.com/tqm-dev/ShivaVG-2 that is no longer actively maintained._
 
 ## Main Features
 
@@ -19,8 +19,8 @@ _**Note:** This project is based on https://github.com/ileben/ShivaVG that is no
 
 Clone and enter the repository:
 ```
-$ git clone https://github.com/tqm-dev/ShivaVG-2
-$ cd ShivaVG-2
+$ git clone https://github.com/tqm-dev/ShaderVG
+$ cd ShaderVG
 ```
 
 Under UNIX systems, execute configure and make:
@@ -217,5 +217,5 @@ vguComputeWarpQuadToQuad   | NOT implemented
 
 ## License
 
-This project is licensed under the GNU Lesser General Public License v2.1 - see the [LICENSE](https://github.com/tqm-dev/ShivaVG-2/blob/master/COPYING) file for details
+This project is licensed under the GNU Lesser General Public License v2.1 - see the [LICENSE](https://github.com/tqm-dev/ShaderVG/blob/master/COPYING) file for details
 
