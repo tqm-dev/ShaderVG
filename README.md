@@ -1,5 +1,7 @@
 # ShaderVG
 
+<img src="/examples/test_tiger_shader.gif?raw=true" width="400px">
+
 _**Note:** This project is based on https://github.com/tqm-dev/ShivaVG-2_
 
 ## Main Features
