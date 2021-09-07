@@ -109,7 +109,7 @@ void createPear(VGPath p)
 
 int main(int argc, char **argv)
 {
-  testInit(argc, argv, 400,400, "ShivaVG: Path Interpolation Test");
+  testInit(argc, argv, 400,400, "ShaderVG: Path Interpolation Test");
   testCallback(TEST_CALLBACK_DISPLAY, (CallbackFunc)display);
   
   iApple = testCreatePath();

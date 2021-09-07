@@ -113,9 +113,9 @@ void VGContext_ctor(VGContext *c)
   c->surfaceHeight = 0;
   
   /* GetString info */
-  strncpy(c->vendor, "Ivan Leben", sizeof(c->vendor));
-  strncpy(c->renderer, "ShivaVG-2", sizeof(c->renderer));
-  strncpy(c->version, "2.0.0", sizeof(c->version));
+  strncpy(c->vendor, "Takuma Hayashi", sizeof(c->vendor));
+  strncpy(c->renderer, "ShaderVG", sizeof(c->renderer));
+  strncpy(c->version, "1.0.0", sizeof(c->version));
   strncpy(c->extensions, "", sizeof(c->extensions));
   
   /* Mode settings */

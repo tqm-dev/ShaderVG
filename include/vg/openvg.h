@@ -625,7 +625,7 @@ VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height);
 VG_API_CALL void vgResizeSurfaceSH(VGint width, VGint height);
 VG_API_CALL void vgDestroyContextSH(void);
 
-/* Extensions for ShivaVG-2 */
+/* Extensions for ShaderVG */
 #define VG_FRAGMENT_SHADER_SH         0
 #define VG_VERTEX_SHADER_SH           1
 

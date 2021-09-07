@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 {
   /*picuInit();*/
 
-  testInit(argc, argv, 400,400, "ShivaVG: Blending Test");
+  testInit(argc, argv, 400,400, "ShaderVG: Blending Test");
   testCallback(TEST_CALLBACK_DISPLAY, (CallbackFunc)display);
   testOverlayColor(1,1,1,1);
   testOverlayString("Not implemented yet");

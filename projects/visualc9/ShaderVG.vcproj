@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="ShivaVG"
+	Name="ShaderVG"
 	ProjectGUID="{76A4341C-B89E-426E-950C-DFBA16A4B09B}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"

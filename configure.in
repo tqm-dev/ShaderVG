@@ -1,4 +1,4 @@
-AC_INIT(ShivaVG, 2.0.0)
+AC_INIT(ShaderVG, 1.0.0)
 AC_CONFIG_HEADERS([config.h:config.h.in])
 AM_INIT_AUTOMAKE([gnu subdir-objects])
 AC_CANONICAL_HOST
@@ -218,22 +218,22 @@ LDFLAGS=""
 
 NO_GL_H_MSG="
 
-	gl.h header missing! ShivaVG cannot be built without
+	gl.h header missing! ShaderVG cannot be built without
 	OpenGL headers.
 "
 NO_GL_MSG="
 
-	Failed linking with GL library! ShivaVG cannot be built
+	Failed linking with GL library! ShaderVG cannot be built
 	without OpenGL library.
 "
 NO_GLX_H_MSG="
 
-	glx.h header missing! ShivaVG cannot be build without
+	glx.h header missing! ShaderVG cannot be build without
 	GLX headers.
 "
 NO_GLX_MSG="
 
-	Failed linking with GLX library! ShivaVG cannot be built
+	Failed linking with GLX library! ShaderVG cannot be built
 	without GLX library.
 "
 
@@ -290,7 +290,7 @@ examples/Makefile
 #echo "JPEG library present    $has_jpeg"
 
 EXAMPLES_LIST="
-ShivaVG will be compiled with the following example programs
+ShaderVG will be compiled with the following example programs
 (run './configure --help' to see how to change selection) :
 
   VGU                       ${build_test_vgu}
@@ -306,13 +306,13 @@ ShivaVG will be compiled with the following example programs
 "
 
 if test "x$has_glut_h" = "xno"; then
-	echo "ShivaVG example programs will not be built because"
+	echo "ShaderVG example programs will not be built because"
 	echo "the GLUT headers are missing!"
 
 else
 
 	if test "x$has_glut" = "xno"; then
-		echo "ShivaVG example programs will not be built because"
+		echo "ShaderVG example programs will not be built because"
 		echo "linking to GLUT library failed!"
 	
 	else

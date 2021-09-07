@@ -1,12 +1,8 @@
 ===============================================================================
-ShivaVG - an open-source LGPL ANSI C implementation of the OpenVG specification
+ShaderVG - an open-source LGPL ANSI C implementation of the OpenVG specification
 ===============================================================================
 
 Lead developer:
 
-  Ivan Leben <ivan.leben@gmail.com>
+  Takuma Hayashi
 
-Occasional patches:
-
-  Daniel Turing
-  Vincenzo Pupillo

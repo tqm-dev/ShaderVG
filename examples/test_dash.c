@@ -185,7 +185,7 @@ void key(unsigned char code, int x, int y)
 
 int main(int argc, char **argv)
 {
-  testInit(argc, argv, 500,500, "ShivaVG: Dash Pattern Test");
+  testInit(argc, argv, 500,500, "ShaderVG: Dash Pattern Test");
   testCallback(TEST_CALLBACK_DISPLAY, (CallbackFunc)display);
   testCallback(TEST_CALLBACK_KEY, (CallbackFunc)key);
   testCallback(TEST_CALLBACK_BUTTON, (CallbackFunc)click);

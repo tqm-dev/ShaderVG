@@ -329,7 +329,7 @@ void reshape(int x, int y)
 
 int main(int argc, char **argv)
 {
-  testInit(argc, argv, 400,400, "ShivaVG: Linear Gradient Test");
+  testInit(argc, argv, 400,400, "ShaderVG: Linear Gradient Test");
   testCallback(TEST_CALLBACK_DISPLAY, (CallbackFunc)display);
   testCallback(TEST_CALLBACK_BUTTON, (CallbackFunc)click);
   testCallback(TEST_CALLBACK_DRAG, (CallbackFunc)drag);

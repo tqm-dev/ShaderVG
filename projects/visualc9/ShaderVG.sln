@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShivaVG", "ShivaVG.vcproj", "{76A4341C-B89E-426E-950C-DFBA16A4B09B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderVG", "ShaderVG.vcproj", "{76A4341C-B89E-426E-950C-DFBA16A4B09B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDash", "test_dash.vcproj", "{4CCE234B-CC59-4821-AF5D-088B447BE2C3}"
 	ProjectSection(ProjectDependencies) = postProject
