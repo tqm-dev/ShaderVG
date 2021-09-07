@@ -1,6 +1,6 @@
 # ShaderVG
 
-_**Note:** This project is based on https://github.com/tqm-dev/ShivaVG-2 that is no longer actively maintained._
+_**Note:** This project is based on https://github.com/tqm-dev/ShivaVG-2_
 
 ## Main Features
 
