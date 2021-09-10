@@ -1,6 +1,6 @@
 AC_INIT(ShaderVG, 1.0.0)
 AC_CONFIG_HEADERS([config.h:config.h.in])
-AM_INIT_AUTOMAKE([gnu subdir-objects])
+AM_INIT_AUTOMAKE([foreign])
 AC_CANONICAL_HOST
 
 AC_PROG_CC_C99
