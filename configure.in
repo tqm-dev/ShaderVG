@@ -80,7 +80,9 @@ AC_CHECK_SIZEOF([void *])
 # ==============================================
 # Check for math library
 
-AC_CHECK_LIB([m],[cos])
+MATH_LIBS=""
+AC_CHECK_LIB([m],[cos],[MATH_LIBS="-lm"])
+AC_SUBST([MATH_LIBS])
 
 # ==============================================
 # Platform-specific directories and flags
@@ -88,37 +90,42 @@ AC_CHECK_LIB([m],[cos])
 case "${host}" in
 *darwin*)
 	GL_DIR="OpenGL"
-	GLUT_DIR="GLUT"
 	GL_LIB="-framework OpenGL"
-	GLUT_LIB="-framework GLUT"
 	CONFIG_CFLAGS=""
-	CONFIG_LDFLAGS="-framework OpenGL -framework GLUT"
+	CONFIG_LDFLAGS="-framework OpenGL"
 	CONFIG_LDADD="" ;;
 *mingw* | *cygwin*)
 	GL_DIR="GL"
-	GLUT_DIR="GL"
 	GL_LIB="-lGL"
-	GLUT_FLAGS="-lglut"
 	CONFIG_CFLAGS=""
 	CONFIG_LDFLAGS=""
-	CONFIG_LDADD="-lglut -lGL" ;;
+	CONFIG_LDADD="-lGL" ;;
 *)
 	GL_DIR="GL"
-	GLUT_DIR="GL"
 	GL_LIB="-lGL"
-	GLUT_LIB="-lglut"
 	CONFIG_CFLAGS=""
 	CONFIG_LDFLAGS=""
-	CONFIG_LDADD="-lglut -lGL" ;;
+	CONFIG_LDADD="-lGL" ;;
 	
 esac
+
+OPENGL_LIBS="$GL_LIB"
+EGL_CFLAGS=""
+DLOPEN_LIBS=""
+NATIVE_WINDOW_CFLAGS=""
+NATIVE_WINDOW_LIBS=""
 
 AC_SUBST([CONFIG_CFLAGS])
 AC_SUBST([CONFIG_LDFLAGS])
 AC_SUBST([CONFIG_LDADD])
+AC_SUBST([OPENGL_LIBS])
+AC_SUBST([EGL_CFLAGS])
+AC_SUBST([DLOPEN_LIBS])
+AC_SUBST([NATIVE_WINDOW_CFLAGS])
+AC_SUBST([NATIVE_WINDOW_LIBS])
 
 # ==============================================
-# Check for OpenGL and GLUT headers
+# Check for OpenGL and EGL headers
 
 AC_CHECK_HEADERS(
 	[$GL_DIR/gl.h],
@@ -129,18 +136,23 @@ AC_CHECK_HEADERS(
 	[has_glu_h="yes"], [has_glu_h="no"])
 
 AC_CHECK_HEADERS(
-	[$GLUT_DIR/glut.h],
-	[has_glut_h="yes"], [has_glut_h="no"])
+	[EGL/egl.h],
+	[has_egl_h="yes"], [has_egl_h="no"])
 
-case "${host}" in
-*linux*)
-	AC_CHECK_HEADERS(
-		[$GL_DIR/glx.h],
-		[has_glx_h]="yes", [has_glx_h]="no") ;;
-esac
+AC_MSG_CHECKING([for EGL/eglext.h])
+AC_COMPILE_IFELSE(
+	[AC_LANG_SOURCE([[#include <EGL/egl.h>
+#include <EGL/eglext.h>
+int main(void) { return 0; }]])],
+	[has_eglext_h="yes"; AC_MSG_RESULT([yes])],
+	[has_eglext_h="no"; AC_MSG_RESULT([no])])
+
+AC_CHECK_HEADERS(
+	[X11/Xlib.h],
+	[has_x11_h="yes"], [has_x11_h="no"])
 
 # ===============================================
-# Check for OpenGL and GLUT libraries
+# Check for OpenGL and native window libraries
 
 LDFLAGS="$LDFLAGS $GL_LIB"
 
@@ -151,21 +163,15 @@ AC_LINK_IFELSE([
 	[has_gl="yes"] && [echo "yes"],
 	[has_gl="no"] && [echo "no"])
 
-case "${host}" in
-*linux*)
-	AC_CHECK_LIB(
-		[GL], glXGetProcAddress,
-		[has_glx="yes"], [has_glx="no"]) ;;
-esac
+AC_CHECK_LIB(
+	[X11], XOpenDisplay,
+	[has_x11="yes"; NATIVE_WINDOW_LIBS="-lX11"],
+	[has_x11="no"])
 
-LDFLAGS="$LDFLAGS $GLUT_LIB"
-
-echo -n "checking for GLUT library... "
-AC_LINK_IFELSE([
-	char glutInit();
-	int main(void) {glutInit(); return 0;}],
-	[has_glut="yes"] && [echo "yes"],
-	[has_glut="no"] && [echo "no"])
+AC_CHECK_LIB(
+	[dl], dlopen,
+	[DLOPEN_LIBS="-ldl"],
+	[DLOPEN_LIBS=""])
 
 LDFLAGS=""
 
@@ -210,7 +216,7 @@ if test "x$build_test_pattern" = "xyes"; then
 	fi
 fi
 
-CFLASGS=""
+CFLAGS=""
 LDFLAGS=""
 
 # ==============================================
@@ -226,15 +232,20 @@ NO_GL_MSG="
 	Failed linking with GL library! ShaderVG cannot be built
 	without OpenGL library.
 "
-NO_GLX_H_MSG="
+NO_EGL_H_MSG="
 
-	glx.h header missing! ShaderVG cannot be build without
-	GLX headers.
+	EGL/egl.h header missing! ShaderVG cannot be built without
+	EGL headers.
 "
-NO_GLX_MSG="
+NO_X11_H_MSG="
 
-	Failed linking with GLX library! ShaderVG cannot be built
-	without GLX library.
+	X11/Xlib.h header missing! ShaderVG examples cannot be built
+	without X11 headers.
+"
+NO_X11_MSG="
+
+	Failed linking with X11 library! ShaderVG examples cannot be built
+	without X11 library.
 "
 
 if test "x$has_gl_h" = "xno"; then
@@ -245,20 +256,14 @@ if test "x$has_gl" = "xno"; then
 	AC_MSG_FAILURE([$NO_GL_MSG])
 fi
 
-case "${host}" in
-*linux*)
-	if test "x$has_glx_h" = "xno"; then
-		AC_MSG_FAILURE([$NO_GLX_H_MSG])
-	fi
-	if test "x$has_glx" = "xno"; then
-		AC_MSG_FAILURE([$NO_GLX_MSG])
-	fi ;;
-esac
+if test "x$has_egl_h" = "xno"; then
+	AC_MSG_FAILURE([$NO_EGL_H_MSG])
+fi
 
 # ========================================================
 # Setup automake conditionals according to configuration
 
-AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$has_glut_h" = "xyes"])
+AM_CONDITIONAL([BUILD_EXAMPLES], [test "x$has_x11_h" = "xyes" -a "x$has_x11" = "xyes"])
 
 AM_CONDITIONAL([BUILD_VGU],         [test "x$build_test_vgu" = "xyes"])
 AM_CONDITIONAL([BUILD_DASH],        [test "x$build_test_dash" = "xyes"])
@@ -280,13 +285,12 @@ examples/Makefile
 # =============================================
 
 #echo "GL headers present      $has_gl_h"
-#echo "GLX headers present     $has_glx_h"
-#echo "GLUT headers present    $has_glut_h"
+#echo "EGL headers present     $has_egl_h"
+#echo "X11 headers present     $has_x11_h"
 #echo "JPEG headers present    $has_jpeg_h"
 #echo ""
 #echo "GL library present      $has_gl"
-#echo "GLX library present     $has_glx"
-#echo "GLUT library present    $has_glut"
+#echo "X11 library present     $has_x11"
 #echo "JPEG library present    $has_jpeg"
 
 EXAMPLES_LIST="
@@ -303,17 +307,19 @@ ShaderVG will be compiled with the following example programs
   Pattern paint             ${build_test_pattern}
   Blending                  ${build_test_blend}
   Tiger Shader              ${build_test_tiger_shader}
+  Pbuffer smoke             yes
+  EGL/OpenGL/OpenVG interop yes
 "
 
-if test "x$has_glut_h" = "xno"; then
+if test "x$has_x11_h" = "xno"; then
 	echo "ShaderVG example programs will not be built because"
-	echo "the GLUT headers are missing!"
+	echo "the X11 headers are missing!"
 
 else
 
-	if test "x$has_glut" = "xno"; then
+	if test "x$has_x11" = "xno"; then
 		echo "ShaderVG example programs will not be built because"
-		echo "linking to GLUT library failed!"
+		echo "linking to X11 library failed!"
 	
 	else
 

@@ -13,8 +13,8 @@ _**Note:** This project is based on https://github.com/tqm-dev/ShivaVG-2_
 
 ### Prerequisites
 
-- OpenGL development libraries and headers should be installed.
-- freeglut must be installed for rendering on window system.  
+- OpenGL and EGL development libraries and headers should be installed.
+- X11 development libraries and headers are needed for the example window harness on Unix-like systems.
 - jpeglib needs to be installed for example programs that use images.
 
 ### Compiling
@@ -28,9 +28,15 @@ $ cd ShaderVG
 Under UNIX systems, execute configure and make:
 ```
 $ sh autogen.sh
-$ ./configure LIBS="-lGL -lglut -ljpeg"
+$ ./configure
 $ make
 ```
+
+ShaderVG installs two libraries: `libOpenVG` contains the OpenVG implementation,
+and `libShaderVGEGL` exposes the EGL entry points that bind OpenVG contexts to
+real platform EGL displays and surfaces. Client applications should link
+`libShaderVGEGL` before the platform EGL library so ShaderVG's OpenVG-aware EGL
+entry points are used first.
 
 ### Testing
 
@@ -69,6 +75,13 @@ $ ./test_tiger_shader
 #### test_pattern
   An image is drawn in multiply mode with an image pattern fill
   paint.
+
+#### test_pbuffer
+  Minimal EGL/OpenVG pbuffer smoke test that clears an offscreen surface
+  and reads one pixel back.
+
+#### test_egl_gl_vg
+  Interleaves raw OpenGL and OpenVG drawing on the same EGL surface.
 
 ## Implementation status
 
@@ -198,26 +211,35 @@ vguComputeWarpQuadToQuad   | NOT implemented
         
 ## Extensions
 
-### Manipulate the OpenVG context as a temporary replacement for EGL:
+### EGL OpenVG context binding
 
-- VGboolean vgCreateContextSH(VGint width, VGint height)
+ShaderVG clients create and bind OpenVG contexts through EGL:
 
-  Creates an OpenVG context on top of an existing OpenGL context
-  that should have been manually initialized by the user of the
-  library. Width and height specify the size of the rendering
-  surface. No multi-threading support has been implemented yet.
-  The context is created once per process.
+```c
+EGLDisplay dpy = eglGetDisplay(native_display);
+eglInitialize(dpy, NULL, NULL);
+eglBindAPI(EGL_OPENVG_API);
 
-- void vgResizeSurfaceSH(VGint width, VGint height)
+EGLint attribs[] = {
+  EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+  EGL_RENDERABLE_TYPE, EGL_OPENVG_BIT,
+  EGL_NONE
+};
+eglChooseConfig(dpy, attribs, &config, 1, &count);
 
-  Should be called whenever the size of the surface changes (e.g.
-  the owner window of the OpenGL context is resized).
+surface = eglCreateWindowSurface(dpy, config, native_window, NULL);
+context = eglCreateContext(dpy, config, EGL_NO_CONTEXT, NULL);
+eglMakeCurrent(dpy, surface, surface, context);
 
-- void vgDestroyContextSH()
+vgClear(0, 0, width, height);
+eglSwapBuffers(dpy, surface);
+```
 
-  Destroys the OpenVG context associated with the calling process.
+`libShaderVGEGL` delegates native display, surface, and backing OpenGL context
+creation to the platform EGL implementation. ShaderVG only supplies the OpenVG
+implementation and the glue needed for `EGL_OPENVG_API` / `EGL_OPENVG_BIT` to
+select a ShaderVG OpenVG context.
 
 ## License
 
 This project is licensed under the GNU Lesser General Public License v2.1 - see the [LICENSE](https://github.com/tqm-dev/ShaderVG/blob/master/COPYING) file for details
-

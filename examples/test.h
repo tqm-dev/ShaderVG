@@ -10,12 +10,11 @@
 
 #if defined(__APPLE__)
 #  include <OpenGL/gl.h>
-#  include <GLUT/glut.h>
 #else
 #  include <GL/gl.h>
-#  include <GL/freeglut.h>
 #endif
 
+#include <EGL/egl.h>
 #include "GL/glext.h"
 
 #include <vg/openvg.h>
@@ -43,6 +42,14 @@ typedef void (*ButtonFunc)(int button, int state, int x, int y);
 typedef void (*MoveFunc)(int x, int y);
 typedef void (*DragFunc)(int x, int y);
 typedef void (*CleanupFunc)();
+
+#define GLUT_KEY_LEFT  100
+#define GLUT_KEY_RIGHT 102
+#define GLUT_UP        1
+#define GLUT_DOWN      0
+
+void testPostRedisplay(void);
+#define glutPostRedisplay testPostRedisplay
 
 VGPath testCreatePath();
 void testMoveTo(VGPath p, float x, float y, VGPathAbsRel absrel);
@@ -79,4 +86,3 @@ void testRun();
 
 VGint testWidth();
 VGint testHeight();
-

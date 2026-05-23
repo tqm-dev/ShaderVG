@@ -42,7 +42,7 @@ typedef enum
 
 typedef struct
 {
-  /* Surface info (since no EGL yet) */
+  /* Surface info supplied by the EGL frontend */
   SHint surfaceWidth;
   SHint surfaceHeight;
   
@@ -141,6 +141,7 @@ typedef struct
   const void* userShaderFragment;
   GLint vs;
   GLint fs;
+  VGboolean glInitialized;
 
 } VGContext;
 
@@ -152,6 +153,11 @@ SHint shIsValidPaint(VGContext *c, VGHandle h);
 SHint shIsValidImage(VGContext *c, VGHandle h);
 SHResourceType shGetResourceType(VGContext *c, VGHandle h);
 VGContext* shGetContext();
+VGContext* shCreateContext(void);
+void shDestroyContext(VGContext *c);
+VGboolean shSetCurrentContext(VGContext *c, VGint width, VGint height);
+void shClearCurrentContext(void);
+void shResizeCurrentSurface(VGint width, VGint height);
 
 /*----------------------------------------------------
  * TODO: Add mutex locking/unlocking to these macros

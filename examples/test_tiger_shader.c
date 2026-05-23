@@ -3,6 +3,10 @@
 #include <jpeglib.h>
 #include <math.h>
 
+#ifndef M_PI
+#  define M_PI 3.14159265358979323846
+#endif
+
 #ifndef IMAGE_DIR
 #  define IMAGE_DIR "./"
 #endif
@@ -295,57 +299,45 @@ mat4 *mat4_perspective(float fov, float aspect, float near,
  *  sh_Model
  *  sh_Ortho
  */
-const char* vgShaderVertexUserTest = R"glsl(
-
-    uniform mat4 myModel;
-    uniform mat4 myView;
-    uniform mat4 myPerspective;
-    out vec3 myNoramal;
-    out vec3 myFragPos;
-
-    void shMain(){
-
-        gl_Position = myPerspective * myView * sh_Model * myModel * sh_Vertex;
-
-        myFragPos = (sh_Model * myModel * sh_Vertex).xyz;
-
-        vec4 normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, 1, sh_Vertex.w);
-        if(normalPos.z < myFragPos.z)
-           // Flip normal pos (FIXME:Looking for more efficient way ...)
-           normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, -1, sh_Vertex.w);
-        myNoramal = normalize(normalPos.xyz - myFragPos);
-    }
-
-)glsl";
+const char* vgShaderVertexUserTest =
+"uniform mat4 myModel;\n"
+"uniform mat4 myView;\n"
+"uniform mat4 myPerspective;\n"
+"out vec3 myNoramal;\n"
+"out vec3 myFragPos;\n"
+"\n"
+"void shMain(){\n"
+"    gl_Position = myPerspective * myView * sh_Model * myModel * sh_Vertex;\n"
+"    myFragPos = (sh_Model * myModel * sh_Vertex).xyz;\n"
+"    vec4 normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, 1, sh_Vertex.w);\n"
+"    if(normalPos.z < myFragPos.z)\n"
+"        normalPos = sh_Model * myModel * vec4(sh_Vertex.xy, -1, sh_Vertex.w);\n"
+"    myNoramal = normalize(normalPos.xyz - myFragPos);\n"
+"}\n";
 
 /* 
  * Built-in input:
  *     sh_Color
  */
-const char* vgShaderFragmentUserTest = R"glsl(
-
-    vec3 lightPos = vec3(300, 600, 300);
-    vec3 lightColor = vec3(1.0, 1.0, 1.0);
-    vec3 cameraPos = vec3(300, 300, 300); 
-    in vec3 myNoramal;
-    in vec3 myFragPos;
-
-    void shMain(){
-
-        vec3 lightDir = normalize(lightPos - myFragPos);
-        vec3 reflectDir = reflect(-lightDir, myNoramal);
-        vec3 viewDir = normalize(cameraPos - myFragPos);
-
-        float ambientFactor  = 0.3;
-        float diffuseFactor  = max(dot(myNoramal, lightDir), 0.0);
-        float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), 8);
-
-        vec3 ambient  = ambientFactor  * lightColor;
-        vec3 diffuse  = diffuseFactor  * lightColor;
-        vec3 specular = specularFactor * lightColor * 0.8;
-        gl_FragColor  = vec4((ambient + diffuse + specular) * sh_Color.rgb, 1.0);
-    }
-)glsl";
+const char* vgShaderFragmentUserTest =
+"vec3 lightPos = vec3(300, 600, 300);\n"
+"vec3 lightColor = vec3(1.0, 1.0, 1.0);\n"
+"vec3 cameraPos = vec3(300, 300, 300);\n"
+"in vec3 myNoramal;\n"
+"in vec3 myFragPos;\n"
+"\n"
+"void shMain(){\n"
+"    vec3 lightDir = normalize(lightPos - myFragPos);\n"
+"    vec3 reflectDir = reflect(-lightDir, myNoramal);\n"
+"    vec3 viewDir = normalize(cameraPos - myFragPos);\n"
+"    float ambientFactor = 0.3;\n"
+"    float diffuseFactor = max(dot(myNoramal, lightDir), 0.0);\n"
+"    float specularFactor = pow(max(dot(viewDir, reflectDir), 0.0), 8);\n"
+"    vec3 ambient = ambientFactor * lightColor;\n"
+"    vec3 diffuse = diffuseFactor * lightColor;\n"
+"    vec3 specular = specularFactor * lightColor * 0.8;\n"
+"    fragColor = vec4((ambient + diffuse + specular) * sh_Color.rgb, 1.0);\n"
+"}\n";
 
 void setupShaders()
 {

@@ -37,6 +37,19 @@
 #define _ARRAY_DEFINE
 #include "shArrayBase.h"
 
+static void shEnsurePaintTexture(SHPaint *p)
+{
+  if (p->texture != 0)
+    return;
+
+  glGenTextures(1, &p->texture);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glBindTexture(GL_TEXTURE_2D, p->texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SH_GRADIENT_TEX_WIDTH, SH_GRADIENT_TEX_HEIGHT, 0,
+               GL_RGBA, GL_FLOAT, NULL);
+  GL_CEHCK_ERROR;
+}
+
 
 void SHPaint_ctor(SHPaint *p)
 {
@@ -52,13 +65,7 @@ void SHPaint_ctor(SHPaint *p)
   for (i=0; i<4; ++i) p->linearGradient[i] = 0.0f;
   for (i=0; i<5; ++i) p->radialGradient[i] = 0.0f;
   p->pattern = VG_INVALID_HANDLE;
-  
-  glGenTextures(1, &p->texture);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glBindTexture(GL_TEXTURE_2D, p->texture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SH_GRADIENT_TEX_WIDTH, SH_GRADIENT_TEX_HEIGHT, 0,
-               GL_RGBA, GL_FLOAT, NULL);
-  GL_CEHCK_ERROR;
+  p->texture = 0;
 }
 
 void SHPaint_dtor(SHPaint *p)
@@ -66,7 +73,7 @@ void SHPaint_dtor(SHPaint *p)
   SH_DEINITOBJ(SHStopArray, p->instops);
   SH_DEINITOBJ(SHStopArray, p->stops);
   
-  if (glIsTexture(p->texture))
+  if (p->texture != 0 && glIsTexture(p->texture))
     glDeleteTextures(1, &p->texture);
 }
 
@@ -182,6 +189,7 @@ void shUpdateColorRampTexture(SHPaint *p)
   }
   
   /* Update texture image */
+  shEnsurePaintTexture(p);
   glBindTexture(GL_TEXTURE_2D, p->texture);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   
@@ -350,6 +358,7 @@ void shGenerateStops(SHPaint *p, SHfloat minOffset, SHfloat maxOffset,
 
 void shSetGradientTexGLState(SHPaint *p)
 {
+  shEnsurePaintTexture(p);
   glBindTexture(GL_TEXTURE_2D, p->texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -498,4 +507,3 @@ int shLoadOneColorMesh(SHPaint *p)
 
   return 1; 
 }
-

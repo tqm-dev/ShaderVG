@@ -25,221 +25,159 @@
 #include <string.h>
 #include <stdio.h>
 
-static const char* vgShaderVertexPipeline = R"glsl(
-    #version 330
-    
-/*** Input *******************/
-    in vec2 pos;
-    in vec2 textureUV;
-    uniform mat4 sh_Model;
-    uniform mat4 sh_Ortho;
-    uniform mat3 paintInverted;
+static const char* vgShaderVertexPipeline =
+"#version 330\n"
+"\n"
+"in vec2 pos;\n"
+"in vec2 textureUV;\n"
+"uniform mat4 sh_Model;\n"
+"uniform mat4 sh_Ortho;\n"
+"uniform mat3 paintInverted;\n"
+"\n"
+"out vec2 texImageCoord;\n"
+"out vec2 paintCoord;\n"
+"\n"
+"vec4 sh_Vertex;\n"
+"\n"
+"void shMain(void);\n"
+"\n"
+"void main() {\n"
+"    sh_Vertex = vec4(pos, 0, 1);\n"
+"    shMain();\n"
+"    texImageCoord = textureUV;\n"
+"    paintCoord = (paintInverted * vec3(pos, 1)).xy;\n"
+"}\n";
 
-/*** Output ******************/
-    out vec2 texImageCoord;
-    out vec2 paintCoord;
+static const char* vgShaderVertexUserDefault =
+"void shMain(){ gl_Position = sh_Ortho * sh_Model * sh_Vertex; }\n";
 
-/*** Grobal variables ********************/
-    vec4 sh_Vertex;
+static const char* vgShaderFragmentPipeline =
+"#version 330\n"
+"\n"
+"#define PAINT_TYPE_COLOR           0x1B00\n"
+"#define PAINT_TYPE_LINEAR_GRADIENT 0x1B01\n"
+"#define PAINT_TYPE_RADIAL_GRADIENT 0x1B02\n"
+"#define PAINT_TYPE_PATTERN         0x1B03\n"
+"\n"
+"#define DRAW_IMAGE_NORMAL          0x1F00\n"
+"#define DRAW_IMAGE_MULTIPLY        0x1F01\n"
+"\n"
+"#define DRAW_MODE_PATH             0\n"
+"#define DRAW_MODE_IMAGE            1\n"
+"\n"
+"in vec2 texImageCoord;\n"
+"in vec2 paintCoord;\n"
+"\n"
+"uniform int drawMode;\n"
+"uniform sampler2D imageSampler;\n"
+"uniform int imageMode;\n"
+"uniform int paintType;\n"
+"uniform vec4 paintColor;\n"
+"uniform vec2 paintParams[3];\n"
+"uniform sampler2D rampSampler;\n"
+"uniform sampler2D patternSampler;\n"
+"uniform vec4 scaleFactorBias[2];\n"
+"\n"
+"out vec4 fragColor;\n"
+"vec4 sh_Color;\n"
+"\n"
+"float linearGradient(vec2 fragCoord, vec2 p0, vec2 p1){\n"
+"    float x  = fragCoord.x;\n"
+"    float y  = fragCoord.y;\n"
+"    float x0 = p0.x;\n"
+"    float y0 = p0.y;\n"
+"    float x1 = p1.x;\n"
+"    float y1 = p1.y;\n"
+"    float dx = x1 - x0;\n"
+"    float dy = y1 - y0;\n"
+"    return ( dx * (x - x0) + dy * (y - y0) ) / ( dx*dx + dy*dy );\n"
+"}\n"
+"\n"
+"float radialGradient(vec2 fragCoord, vec2 centerCoord, vec2 focalCoord, float r){\n"
+"    float x   = fragCoord.x;\n"
+"    float y   = fragCoord.y;\n"
+"    float cx  = centerCoord.x;\n"
+"    float cy  = centerCoord.y;\n"
+"    float fx  = focalCoord.x;\n"
+"    float fy  = focalCoord.y;\n"
+"    float dx  = x - fx;\n"
+"    float dy  = y - fy;\n"
+"    float dfx = fx - cx;\n"
+"    float dfy = fy - cy;\n"
+"    return ( (dx * dfx + dy * dfy) + sqrt(r*r*(dx*dx + dy*dy) - pow(dx*dfy - dy*dfx, 2.0)) )\n"
+"         / ( r*r - (dfx*dfx + dfy*dfy) );\n"
+"}\n"
+"\n"
+"void shMain(void);\n"
+"\n"
+"void main()\n"
+"{\n"
+"    vec4 col;\n"
+"    switch(paintType){\n"
+"    case PAINT_TYPE_LINEAR_GRADIENT:\n"
+"        {\n"
+"            vec2 x0 = paintParams[0];\n"
+"            vec2 x1 = paintParams[1];\n"
+"            float factor = linearGradient(paintCoord, x0, x1);\n"
+"            col = texture(rampSampler, vec2(factor, 0.5));\n"
+"        }\n"
+"        break;\n"
+"    case PAINT_TYPE_RADIAL_GRADIENT:\n"
+"        {\n"
+"            vec2 center = paintParams[0];\n"
+"            vec2 focal = paintParams[1];\n"
+"            float radius = paintParams[2].x;\n"
+"            float factor = radialGradient(paintCoord, center, focal, radius);\n"
+"            col = texture(rampSampler, vec2(factor, 0.5));\n"
+"        }\n"
+"        break;\n"
+"    case PAINT_TYPE_PATTERN:\n"
+"        {\n"
+"            float width = paintParams[0].x;\n"
+"            float height = paintParams[0].y;\n"
+"            vec2 texCoord = vec2(paintCoord.x / width, paintCoord.y / height);\n"
+"            col = texture(patternSampler, texCoord);\n"
+"        }\n"
+"        break;\n"
+"    default:\n"
+"    case PAINT_TYPE_COLOR:\n"
+"        col = paintColor;\n"
+"        break;\n"
+"    }\n"
+"    if(drawMode == DRAW_MODE_IMAGE) {\n"
+"        col = texture(imageSampler, texImageCoord)\n"
+"            * (imageMode == DRAW_IMAGE_MULTIPLY ? col : vec4(1.0, 1.0, 1.0, 1.0));\n"
+"    }\n"
+"    sh_Color = col * scaleFactorBias[0] + scaleFactorBias[1];\n"
+"    shMain();\n"
+"}\n";
 
-/*** Functions ****************************************/
+static const char* vgShaderFragmentUserDefault =
+"void shMain(){ fragColor = sh_Color; }\n";
 
-    // User defined shader
-    void shMain(void);
+static const char* vgShaderVertexColorRamp =
+"#version 330\n"
+"\n"
+"in vec2 step;\n"
+"in vec4 stepColor;\n"
+"out vec4 interpolateColor;\n"
+"\n"
+"void main()\n"
+"{\n"
+"    gl_Position = vec4(step.xy, 0, 1);\n"
+"    interpolateColor = stepColor;\n"
+"}\n";
 
-/*** Main thread  **************************************************/
-    void main() {
-
-        /* Stage 3: Transformation */
-        sh_Vertex = vec4(pos, 0, 1);
-
-        /* Extended Stage: User defined shader that affects gl_Position */
-        shMain();
-
-        /* 2D pos in texture space */
-        texImageCoord = textureUV;
-
-        /* 2D pos in paint space (Back to paint space) */
-        paintCoord = (paintInverted * vec3(pos, 1)).xy;
-
-    }
-)glsl";
-
-static const char* vgShaderVertexUserDefault = R"glsl(
-    void shMain(){ gl_Position = sh_Ortho * sh_Model * sh_Vertex; }
-)glsl";
-
-static const char* vgShaderFragmentPipeline = R"glsl(
-
-    #version 330
-
-/*** Enum constans ************************************/
-
-    #define PAINT_TYPE_COLOR			0x1B00
-    #define PAINT_TYPE_LINEAR_GRADIENT	0x1B01
-    #define PAINT_TYPE_RADIAL_GRADIENT	0x1B02
-    #define PAINT_TYPE_PATTERN			0x1B03
-
-    #define DRAW_IMAGE_NORMAL 			0x1F00
-    #define DRAW_IMAGE_MULTIPLY 		0x1F01
-
-    #define DRAW_MODE_PATH				0
-    #define DRAW_MODE_IMAGE				1
-
-/*** Interpolated *************************************/
-
-    in vec2 texImageCoord;
-    in vec2 paintCoord;
-
-/*** Input ********************************************/
-
-    // Basic rendering Mode
-    uniform int drawMode;
-    // Image
-    uniform sampler2D imageSampler;
-    uniform int imageMode;
-    // Paint
-    uniform int paintType;
-    uniform vec4 paintColor;
-    uniform vec2 paintParams[3];
-    // Gradient
-    uniform sampler2D rampSampler;
-    // Pattern
-    uniform sampler2D patternSampler;
-    // Color transform
-    uniform vec4 scaleFactorBias[2];
-
-/*** Output *******************************************/
-
-    //out vec4 fragColor;
-
-/*** Built-in variables for shMain *******************************************/
-
-    vec4 sh_Color;
-
-/*** Functions ****************************************/
-
-    // 9.3.1 Linear Gradients
-    float linearGradient(vec2 fragCoord, vec2 p0, vec2 p1){
-
-        float x  = fragCoord.x;
-        float y  = fragCoord.y;
-        float x0 = p0.x;
-        float y0 = p0.y;
-        float x1 = p1.x;
-        float y1 = p1.y;
-        float dx = x1 - x0;
-        float dy = y1 - y0;
-    
-        return
-            ( dx * (x - x0) + dy * (y - y0) )
-         /  ( dx*dx + dy*dy );
-    }
-
-    // 9.3.2 Radial Gradients
-    float radialGradient(vec2 fragCoord, vec2 centerCoord, vec2 focalCoord, float r){
-
-        float x   = fragCoord.x;
-        float y   = fragCoord.y;
-        float cx  = centerCoord.x;
-        float cy  = centerCoord.y;
-        float fx  = focalCoord.x;
-        float fy  = focalCoord.y;
-        float dx  = x - fx;
-        float dy  = y - fy;
-        float dfx = fx - cx;
-        float dfy = fy - cy;
-    
-        return
-            ( (dx * dfx + dy * dfy) + sqrt(r*r*(dx*dx + dy*dy) - pow(dx*dfy - dy*dfx, 2.0)) )
-         /  ( r*r - (dfx*dfx + dfy*dfy) );
-    }
-
-    // User defined shader
-    void shMain(void);
-
-/*** Main thread  *************************************/
-
-    void main()
-    {
-        vec4 col;
-
-        /* Stage 6: Paint Generation */
-        switch(paintType){
-        case PAINT_TYPE_LINEAR_GRADIENT:
-            {
-                vec2  x0 = paintParams[0];
-                vec2  x1 = paintParams[1];
-                float factor = linearGradient(paintCoord, x0, x1);
-                col = texture(rampSampler, vec2(factor, 0.5));
-            }
-            break;
-        case PAINT_TYPE_RADIAL_GRADIENT:
-            {
-                vec2  center = paintParams[0];
-                vec2  focal  = paintParams[1];
-                float radius = paintParams[2].x;
-                float factor = radialGradient(paintCoord, center, focal, radius);
-                col = texture(rampSampler, vec2(factor, 0.5));
-            }
-            break;
-        case PAINT_TYPE_PATTERN:
-            {
-                float width  = paintParams[0].x;
-                float height = paintParams[0].y;
-                vec2  texCoord = vec2(paintCoord.x / width, paintCoord.y / height);
-                col = texture(patternSampler, texCoord);
-            }
-            break;
-        default:
-        case PAINT_TYPE_COLOR:
-            col = paintColor;
-            break;
-        }
-
-        /* Stage 7: Image Interpolation */
-        if(drawMode == DRAW_MODE_IMAGE) {
-            col = texture(imageSampler, texImageCoord)
-                      * (imageMode == DRAW_IMAGE_MULTIPLY ? col : vec4(1.0, 1.0, 1.0, 1.0));
-        } 
-
-        /* Stage 8: Color Transformation, Blending, and Antialiasing */
-        sh_Color = col * scaleFactorBias[0] + scaleFactorBias[1] ;
-
-        /* Extended Stage: User defined shader that affects gl_FragColor */
-        shMain();
-    }
-)glsl";
-
-static const char* vgShaderFragmentUserDefault = R"glsl(
-    void shMain(){ gl_FragColor = sh_Color; };
-)glsl";
-
-static const char* vgShaderVertexColorRamp = R"glsl(
-    #version 330
-    
-    in  vec2 step;
-    in  vec4 stepColor;
-    out vec4 interpolateColor;
-
-    void main()
-    {
-        gl_Position = vec4(step.xy, 0, 1);
-        interpolateColor = stepColor;
-    }
-)glsl";
-
-static const char* vgShaderFragmentColorRamp = R"glsl(
-    #version 330
-
-    in  vec4 interpolateColor;
-    out vec4 fragColor;
-
-    void main()
-    {
-        fragColor = interpolateColor;
-    }
-)glsl";
+static const char* vgShaderFragmentColorRamp =
+"#version 330\n"
+"\n"
+"in vec4 interpolateColor;\n"
+"out vec4 fragColor;\n"
+"\n"
+"void main()\n"
+"{\n"
+"    fragColor = interpolateColor;\n"
+"}\n";
 
 void shInitPiplelineShaders(void) {
 
@@ -490,5 +428,4 @@ VG_API_CALL void vgUniform4ivSH (VGint location, VGint count, const VGint *value
     glUniform4iv (location, count, value);
     GL_CEHCK_ERROR;
 }
-
 

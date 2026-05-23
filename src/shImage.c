@@ -466,7 +466,7 @@ void SHImage_ctor(SHImage *i)
   i->data = NULL;
   i->width = 0;
   i->height = 0;
-  glGenTextures(1, &i->texture);
+  i->texture = 0;
 }
 
 void SHImage_dtor(SHImage *i)
@@ -474,7 +474,7 @@ void SHImage_dtor(SHImage *i)
   if (i->data != NULL)
     free(i->data);
   
-  if (glIsTexture(i->texture))
+  if (i->texture != 0 && glIsTexture(i->texture))
     glDeleteTextures(1, &i->texture);
 }
 
@@ -513,6 +513,9 @@ void shUpdateImageTextureSize(SHImage *i)
 void shUpdateImageTexture(SHImage *i, VGContext *c)
 {
   /* Store pixels to texture */
+  if (i->texture == 0)
+    glGenTextures(1, &i->texture);
+
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glBindTexture(GL_TEXTURE_2D, i->texture);
   glTexImage2D(GL_TEXTURE_2D, 0, i->fd.glintformat,
@@ -1233,4 +1236,3 @@ VG_API_CALL void vgBindImageSH(VGImage image, VGImageUnitSH unit){
   glEnable(GL_TEXTURE_2D);
   GL_CEHCK_ERROR;
 }
-

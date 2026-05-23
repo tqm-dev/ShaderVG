@@ -1,5 +1,14 @@
 #include "test.h"
 
+#include <sys/time.h>
+#include <sys/select.h>
+
+#if !defined(WIN32) && !defined(__APPLE__)
+#  include <X11/Xlib.h>
+#  include <X11/Xutil.h>
+#  include <X11/keysym.h>
+#endif
+
 static int testW = 0;
 static int testH = 0;
 
@@ -12,6 +21,18 @@ static char *overtext = NULL;
 static float overcolor[4] = {0,0,0,1};
 
 static CallbackFunc callbacks[TEST_CALLBACK_COUNT];
+
+#if !defined(WIN32) && !defined(__APPLE__)
+static Display *xDisplay = NULL;
+static Window xWindow = 0;
+static Atom xWmDelete = 0;
+#endif
+
+static EGLDisplay eglDisplay = EGL_NO_DISPLAY;
+static EGLSurface eglSurface = EGL_NO_SURFACE;
+static EGLContext eglContext = EGL_NO_CONTEXT;
+static int testRunning = 1;
+static int testRedisplay = 1;
 
 VGPath testCreatePath()
 {
@@ -143,51 +164,21 @@ void testOverlayString(const char *format, ...)
 
 void testDrawString(float x, float y, const char *format, ...)
 {
-  int i, len;
-  va_list ap;
-  char *text;
-  float k = 0.15;
-  
-  x+=0.5f;
-  y+=0.5f;
-  
-  va_start(ap, format);
-  len = vsnprintf(NULL, 0, format, ap);
-  text = (char*)malloc(len+1);
-  if (!text) {va_end(ap); return;}
-  vsnprintf(text, len+1, format, ap);
-  va_end(ap);
-  
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_LINE_SMOOTH);
-  glDisable(GL_MULTISAMPLE);
-  
-  glMatrixMode(GL_MODELVIEW);
-  glPushMatrix();
-  glLoadIdentity();
-  glTranslatef(x,y,0);
-  glScalef(k,k,k);
-  glLineWidth(1.0f);
-  
-  for (i=0; i<len; ++i) {
-    if (text[i] == '\n') {
-      y -= 20;
-      glLoadIdentity();
-      glTranslatef(x, y, 0);
-      glScalef(k,k,k);
-      continue; }
-    glutStrokeCharacter(GLUT_STROKE_ROMAN, text[i]);
-  }
-  
-  glPopMatrix();
-  glDisable(GL_LINE_SMOOTH);
-  free(text);
+  (void)x;
+  (void)y;
+  (void)format;
 }
 
 void testAnimate(void)
 {
-  glutPostRedisplay ();
+  testPostRedisplay();
+}
+
+static int testElapsedMilliseconds(void)
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (int)(tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
 void testDisplay(void)
@@ -199,7 +190,7 @@ void testDisplay(void)
     (DisplayFunc)callbacks[TEST_CALLBACK_DISPLAY];
   
   /* Get interval from last redraw */
-  now = glutGet(GLUT_ELAPSED_TIME);
+  now = testElapsedMilliseconds();
   if (!timeinit) lastdraw = now;
   msinterval = now - lastdraw;
   interval = (float)msinterval / 1000;
@@ -224,7 +215,7 @@ void testDisplay(void)
 #endif
   
   /* Swap */
-  glutSwapBuffers();
+  eglSwapBuffers(eglDisplay, eglSurface);
   
   /* Count frames per second */
   ++fps;
@@ -296,9 +287,11 @@ void testReshape(int w, int h)
   
   testW = w;
   testH = h;
-  
-  vgResizeSurfaceSH(w, h);
-  
+
+  if (eglDisplay != EGL_NO_DISPLAY &&
+      eglSurface != EGL_NO_SURFACE &&
+      eglContext != EGL_NO_CONTEXT)
+    eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
   
   if (callback)
     (*callback)(w,h);
@@ -311,8 +304,23 @@ void testCleanup(void)
   
   if (callback)
     (*callback)();
-  
-  vgDestroyContextSH();
+
+  if (eglDisplay != EGL_NO_DISPLAY) {
+    if (eglContext != EGL_NO_CONTEXT)
+      eglDestroyContext(eglDisplay, eglContext);
+    eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (eglSurface != EGL_NO_SURFACE)
+      eglDestroySurface(eglDisplay, eglSurface);
+    eglTerminate(eglDisplay);
+  }
+
+#if !defined(WIN32) && !defined(__APPLE__)
+  if (xDisplay && xWindow)
+    XDestroyWindow(xDisplay, xWindow);
+  if (xDisplay)
+    XCloseDisplay(xDisplay);
+#endif
+
   if (overtext) free(overtext);
 }
 
@@ -322,6 +330,11 @@ void testCallback(TestCallbackType type, CallbackFunc func)
     return;
   
   callbacks[type] = func;
+}
+
+void testPostRedisplay(void)
+{
+  testRedisplay = 1;
 }
 
 VGint testWidth()
@@ -338,45 +351,110 @@ void testInit(int argc, char **argv,
               int w, int h, const char *title)
 {
   int i;
-  glutInit(&argc, argv);
-  
-  #if defined(__APPLE__) || defined(WIN32)
-  /*glutInitDisplayString("rgba alpha double stencil samples=4");*/
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA |
-                      GLUT_STENCIL | GLUT_MULTISAMPLE);
-  #else
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA |
-                      GLUT_STENCIL | GLUT_MULTISAMPLE);
-  #endif
-  
-  glutInitWindowPosition(0,0);
-  glutInitWindowSize(w,h);
-  glutCreateWindow(title);
-  const GLubyte* renderer = glGetString(GL_RENDERER);
-  const GLubyte* vendor   = glGetString(GL_VENDOR);
-  const GLubyte* ver      = glGetString(GL_VERSION);
-  const GLubyte* glslVer  = glGetString(GL_SHADING_LANGUAGE_VERSION); 
-  GLint major, minor;
-  glGetIntegerv(GL_MAJOR_VERSION, &major);
-  glGetIntegerv(GL_MINOR_VERSION, &minor);
-  printf("OpenGL on %s %s\n", vendor, renderer);
-  printf("OpenGL version supported %s\n", ver);
-  printf("GLSL version supported %s\n", glslVer);
-  printf("Will now set GL to version %i.%i\n", major, minor);
-  glutInitContextVersion(major, minor);
-  
-  glutReshapeFunc(testReshape);
-  glutDisplayFunc(testDisplay);
-  glutIdleFunc(testAnimate);
-  glutKeyboardFunc(testKeyboard);
-  glutSpecialFunc(testSpecialKeyboard);
-  glutMouseFunc(testButton);
-  glutMotionFunc(testDrag);
-  glutPassiveMotionFunc(testMove);
+  EGLint major, minor, numConfigs, nativeVisual;
+  EGLConfig config;
+  EGLint configAttribs[] = {
+    EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+    EGL_RENDERABLE_TYPE, EGL_OPENVG_BIT,
+    EGL_RED_SIZE, 8,
+    EGL_GREEN_SIZE, 8,
+    EGL_BLUE_SIZE, 8,
+    EGL_ALPHA_SIZE, 8,
+    EGL_STENCIL_SIZE, 8,
+    EGL_NONE
+  };
+
+  (void)argc;
+  (void)argv;
+
+#if !defined(WIN32) && !defined(__APPLE__)
+  xDisplay = XOpenDisplay(NULL);
+  if (!xDisplay) {
+    fprintf(stderr, "Failed to open X display\n");
+    exit(EXIT_FAILURE);
+  }
+
+  eglDisplay = eglGetDisplay((EGLNativeDisplayType)xDisplay);
+#else
+  eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+#endif
+
+  if (eglDisplay == EGL_NO_DISPLAY ||
+      !eglInitialize(eglDisplay, &major, &minor) ||
+      !eglBindAPI(EGL_OPENVG_API) ||
+      !eglChooseConfig(eglDisplay, configAttribs, &config, 1, &numConfigs) ||
+      numConfigs < 1) {
+    fprintf(stderr, "Failed to initialize EGL/OpenVG path (EGL error 0x%x)\n", eglGetError());
+    exit(EXIT_FAILURE);
+  }
+
+#if !defined(WIN32) && !defined(__APPLE__)
+  {
+    XVisualInfo templateInfo;
+    XVisualInfo *visualInfo = NULL;
+    XSetWindowAttributes swa;
+    Colormap colormap;
+    int visualCount = 0;
+    int screen = DefaultScreen(xDisplay);
+
+    eglGetConfigAttrib(eglDisplay, config, EGL_NATIVE_VISUAL_ID, &nativeVisual);
+    if (nativeVisual) {
+      templateInfo.visualid = nativeVisual;
+      visualInfo = XGetVisualInfo(xDisplay, VisualIDMask, &templateInfo, &visualCount);
+    }
+
+    if (!visualInfo) {
+      templateInfo.visual = DefaultVisual(xDisplay, screen);
+      templateInfo.screen = screen;
+      visualInfo = XGetVisualInfo(xDisplay, VisualScreenMask, &templateInfo, &visualCount);
+    }
+
+    if (!visualInfo) {
+      fprintf(stderr, "Failed to choose an X11 visual for EGL\n");
+      exit(EXIT_FAILURE);
+    }
+
+    colormap = XCreateColormap(xDisplay, RootWindow(xDisplay, screen),
+                               visualInfo->visual, AllocNone);
+    swa.colormap = colormap;
+    swa.event_mask = ExposureMask | StructureNotifyMask |
+                     KeyPressMask | ButtonPressMask | ButtonReleaseMask |
+                     PointerMotionMask;
+
+    xWindow = XCreateWindow(xDisplay, RootWindow(xDisplay, screen),
+                            0, 0, (unsigned int)w, (unsigned int)h, 0,
+                            visualInfo->depth, InputOutput, visualInfo->visual,
+                            CWColormap | CWEventMask, &swa);
+    XStoreName(xDisplay, xWindow, title);
+    xWmDelete = XInternAtom(xDisplay, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(xDisplay, xWindow, &xWmDelete, 1);
+    XMapWindow(xDisplay, xWindow);
+    XFree(visualInfo);
+  }
+
+  eglSurface = eglCreateWindowSurface(eglDisplay, config,
+                                      (EGLNativeWindowType)xWindow, NULL);
+#else
+  fprintf(stderr, "This example harness currently requires X11 EGL\n");
+  exit(EXIT_FAILURE);
+#endif
+
+  eglContext = eglCreateContext(eglDisplay, config, EGL_NO_CONTEXT, NULL);
+  if (eglSurface == EGL_NO_SURFACE ||
+      eglContext == EGL_NO_CONTEXT ||
+      !eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+    fprintf(stderr, "Failed to create or bind EGL OpenVG context (EGL error 0x%x)\n", eglGetError());
+    exit(EXIT_FAILURE);
+  }
+
+  printf("EGL %d.%d client APIs: %s\n", major, minor,
+         eglQueryString(eglDisplay, EGL_CLIENT_APIS));
+  printf("OpenGL renderer: %s\n", glGetString(GL_RENDERER));
+  printf("OpenGL version: %s\n", glGetString(GL_VERSION));
+  printf("GLSL version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
   atexit(testCleanup);
-  
-  vgCreateContextSH(w,h);
-  
+
   testW = w;
   testH = h;
   
@@ -386,5 +464,72 @@ void testInit(int argc, char **argv,
 
 void testRun()
 {
-  glutMainLoop();
+#if !defined(WIN32) && !defined(__APPLE__)
+  while (testRunning) {
+    while (XPending(xDisplay) > 0) {
+      XEvent event;
+      XNextEvent(xDisplay, &event);
+
+      switch (event.type) {
+      case ClientMessage:
+        if ((Atom)event.xclient.data.l[0] == xWmDelete)
+          testRunning = 0;
+        break;
+
+      case ConfigureNotify:
+        if (event.xconfigure.width != testW ||
+            event.xconfigure.height != testH)
+          testReshape(event.xconfigure.width, event.xconfigure.height);
+        break;
+
+      case Expose:
+        testPostRedisplay();
+        break;
+
+      case KeyPress: {
+          KeySym keysym = NoSymbol;
+          char text[8];
+          int len = XLookupString(&event.xkey, text, sizeof(text), &keysym, NULL);
+          if (keysym == XK_Left)
+            testSpecialKeyboard(GLUT_KEY_LEFT, event.xkey.x, event.xkey.y);
+          else if (keysym == XK_Right)
+            testSpecialKeyboard(GLUT_KEY_RIGHT, event.xkey.x, event.xkey.y);
+          else if (len > 0)
+            testKeyboard((unsigned char)text[0], event.xkey.x, event.xkey.y);
+        }
+        break;
+
+      case ButtonPress:
+        testButton(event.xbutton.button, GLUT_DOWN, event.xbutton.x, event.xbutton.y);
+        break;
+
+      case ButtonRelease:
+        testButton(event.xbutton.button, GLUT_UP, event.xbutton.x, event.xbutton.y);
+        break;
+
+      case MotionNotify:
+        if (event.xmotion.state & (Button1Mask | Button2Mask | Button3Mask))
+          testDrag(event.xmotion.x, event.xmotion.y);
+        else
+          testMove(event.xmotion.x, event.xmotion.y);
+        break;
+      }
+    }
+
+    if (testRedisplay) {
+      testRedisplay = 0;
+      testDisplay();
+    } else {
+      testDisplay();
+    }
+    {
+      struct timeval delay;
+      delay.tv_sec = 0;
+      delay.tv_usec = 16000;
+      select(0, NULL, NULL, NULL, &delay);
+    }
+  }
+#else
+  fprintf(stderr, "testRun is not implemented for this native platform yet\n");
+#endif
 }

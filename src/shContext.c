@@ -25,86 +25,119 @@
 #include <string.h>
 #include <stdio.h>
 
+void shLoadExtensions(void *c);
+
 /*-----------------------------------------------------
- * Simple functions to create a VG context instance
- * on top of an existing OpenGL context.
- * TODO: There is no mechanics yet to asure the OpenGL
- * context exists and to choose which context / window
- * to bind to. 
+ * The current VG context is selected by the EGL frontend
+ * when a ShaderVG-backed EGLContext is made current.
  *-----------------------------------------------------*/
 
-static VGContext *g_context = NULL;
+#if defined(_MSC_VER)
+#  define SH_TLS __declspec(thread)
+#else
+#  define SH_TLS __thread
+#endif
 
-VG_API_CALL VGboolean vgCreateContextSH(VGint width, VGint height)
+static SH_TLS VGContext *g_current_context = NULL;
+
+static void shResizeSurface(VGContext *context, VGint width, VGint height)
 {
-  /* return if already created */
-  if (g_context) return VG_TRUE;
-  
-  /* create new context */
-  SH_NEWOBJ(VGContext, g_context);
-  if (!g_context) return VG_FALSE;
-  
-  /* init surface info */
-  g_context->surfaceWidth = width;
-  g_context->surfaceHeight = height;
-  
-  /* setup GL projection */
-  glViewport(0,0,width,height);
-  
-  /* Setup shader for rendering*/
-  g_context->userShaderVertex = NULL;
-  g_context->userShaderFragment = NULL;
+  float mat[16];
+  float volume;
+
+  if (!context)
+    return;
+
+  context->surfaceWidth = width;
+  context->surfaceHeight = height;
+
+  glViewport(0, 0, width, height);
+
+  if (context->glInitialized) {
+    volume = fmax(width, height) / 2;
+    shCalcOrtho2D(mat, 0, width, 0, height, -volume, volume);
+    glUseProgram(context->progDraw);
+    glUniformMatrix4fv(context->locationDraw.projection, 1, GL_FALSE, mat);
+    GL_CEHCK_ERROR;
+  }
+}
+
+static VGboolean shInitContextGL(VGContext *context, VGint width, VGint height)
+{
+  if (!context)
+    return VG_FALSE;
+
+  shResizeSurface(context, width, height);
+
+  if (context->glInitialized)
+    return VG_TRUE;
+
+  shLoadExtensions(context);
   shInitPiplelineShaders();
- 
-  /* Setup shaders for making color ramp */
   shInitRampShaders();
+  context->glInitialized = VG_TRUE;
+  shResizeSurface(context, width, height);
 
   return VG_TRUE;
 }
 
-VG_API_CALL void vgResizeSurfaceSH(VGint width, VGint height)
-{
-  VG_GETCONTEXT(VG_NO_RETVAL);
-  
-  /* update surface info */
-  context->surfaceWidth = width;
-  context->surfaceHeight = height;
-  
-  /* setup GL projection */
-  glViewport(0,0,width,height);
-  
-  /* Setup projection matrix */
-  float mat[16];
-  float volume = fmax(width, height) / 2;
-  shCalcOrtho2D(mat, 0, width, 0, height, -volume, volume);
-  glUseProgram(context->progDraw);
-  glUniformMatrix4fv(context->locationDraw.projection, 1, GL_FALSE, mat);
-  GL_CEHCK_ERROR;
-  
-  VG_RETURN(VG_NO_RETVAL);
-}
-
-VG_API_CALL void vgDestroyContextSH()
-{
-  /* return if already released */
-  if (!g_context) return;
-  
-  /* delete context object */
-  SH_DELETEOBJ(VGContext, g_context);
-  g_context = NULL;
-}
-
 VGContext* shGetContext()
 {
-  SH_ASSERT(g_context);
-  return g_context;
+  return g_current_context;
+}
+
+VGContext* shCreateContext(void)
+{
+  VGContext *context = NULL;
+  SH_NEWOBJ(VGContext, context);
+  return context;
+}
+
+void shDestroyContext(VGContext *context)
+{
+  VGContext *previous = g_current_context;
+
+  if (!context)
+    return;
+
+  if (context->glInitialized) {
+    g_current_context = context;
+    shDeinitPiplelineShaders();
+    shDeinitRampShaders();
+    context->glInitialized = VG_FALSE;
+  }
+
+  SH_DELETEOBJ(VGContext, context);
+
+  if (previous == context)
+    g_current_context = NULL;
+  else
+    g_current_context = previous;
+}
+
+VGboolean shSetCurrentContext(VGContext *context, VGint width, VGint height)
+{
+  g_current_context = context;
+
+  if (!context)
+    return VG_TRUE;
+
+  return shInitContextGL(context, width, height);
+}
+
+void shClearCurrentContext(void)
+{
+  g_current_context = NULL;
+}
+
+void shResizeCurrentSurface(VGint width, VGint height)
+{
+  shResizeSurface(g_current_context, width, height);
 }
 
 /*-----------------------------------------------------
  * VGContext constructor
  *-----------------------------------------------------*/
-
-void shLoadExtensions(void *c);
 
 void VGContext_ctor(VGContext *c)
 {
@@ -172,8 +205,15 @@ void VGContext_ctor(VGContext *c)
   SH_INITOBJ(SHPathArray, c->paths);
   SH_INITOBJ(SHPaintArray, c->paints);
   SH_INITOBJ(SHImageArray, c->images);
-
-  shLoadExtensions(c);
+  
+  /* GL state is initialized lazily after EGL makes the context current */
+  c->progDraw = 0;
+  c->progColorRamp = 0;
+  c->userShaderVertex = NULL;
+  c->userShaderFragment = NULL;
+  c->vs = 0;
+  c->fs = 0;
+  c->glInitialized = VG_FALSE;
 }
 
 /*-----------------------------------------------------
@@ -196,6 +236,11 @@ void VGContext_dtor(VGContext *c)
   
   for (i=0; i<c->images.size; ++i)
     SH_DELETEOBJ(SHImage, c->images.items[i]);
+
+  SH_DEINITOBJ(SHPaint, c->defaultPaint);
+  SH_DEINITOBJ(SHPathArray, c->paths);
+  SH_DEINITOBJ(SHPaintArray, c->paints);
+  SH_DEINITOBJ(SHImageArray, c->images);
 }
 
 /*--------------------------------------------------
